@@ -7,6 +7,7 @@ from falcon.runtime.base import ClientRuntime
 class MockRuntime(ClientRuntime):
     def __init__(self):
         self.routes: dict[tuple[str, str], SimpleResponse] = {}
+        self.response_queues: dict[tuple[str, str], list[SimpleResponse]] = {}
         self.requests: list[RequestConfig] = []
 
     def add_response(
@@ -33,10 +34,21 @@ class MockRuntime(ClientRuntime):
             json_data=json_data,
         )
 
+    def add_responses(
+        self,
+        method: str,
+        url: str,
+        responses: list[SimpleResponse],
+    ):
+        self.response_queues[(method.upper(), url)] = responses
+
     async def request(self, config: RequestConfig) -> SimpleResponse:
-        self.requests.append(config)
+        self.requests.append(self._snapshot_config(config))
 
         key = (config.method.upper(), config.url)
+
+        if key in self.response_queues and self.response_queues[key]:
+            return self.response_queues[key].pop(0)
 
         if key not in self.routes:
             return SimpleResponse(
@@ -47,3 +59,16 @@ class MockRuntime(ClientRuntime):
             )
 
         return self.routes[key]
+
+    @staticmethod
+    def _snapshot_config(config: RequestConfig) -> RequestConfig:
+        return RequestConfig(
+            method=config.method,
+            url=config.url,
+            params=dict(config.params or {}),
+            headers=dict(config.headers or {}),
+            cookies=dict(config.cookies or {}),
+            json=config.json,
+            data=config.data,
+            files=dict(config.files) if isinstance(config.files, dict) else config.files,
+        )

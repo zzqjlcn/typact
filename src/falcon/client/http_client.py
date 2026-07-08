@@ -54,6 +54,16 @@ class HttpClient:
         config = await self.interceptor_chain.apply_request(config)
 
         response = await self.runtime.request(config)
+
+        if response.status_code == 401:
+            retry_config = await self.interceptor_chain.refresh_unauthorized(
+                config=config,
+                response=response,
+            )
+
+            if retry_config is not None:
+                response = await self.runtime.request(retry_config)
+
         response = await self.interceptor_chain.apply_response(response)
 
         return self.response_converter.convert(

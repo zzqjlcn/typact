@@ -7,6 +7,7 @@ from falcon.annotations.base import MISSING
 from falcon.annotations.body import BodyParam
 from falcon.annotations.cookie import CookieParam
 from falcon.annotations.file import FileParam
+from falcon.annotations.form import FormParam
 from falcon.annotations.header import HeaderParam
 from falcon.annotations.path import PathParam
 from falcon.annotations.query import QueryParam
@@ -43,6 +44,7 @@ class RequestBuilder:
         header_params: dict[str, Any] = {}
         cookie_params: dict[str, Any] = {}
         body_params: dict[str, Any] = {}
+        form_params: dict[str, Any] = {}
         file_params: dict[str, tuple[FileParam, Any]] = {}
 
         for name, param in route.signature.parameters.items():
@@ -91,6 +93,11 @@ class RequestBuilder:
             elif isinstance(marker, FileParam):
                 file_params[name] = (marker, value)
 
+            elif isinstance(marker, FormParam):
+                key = marker.alias or name
+                if value is not None:
+                    form_params[key] = value
+
             elif value is not None:
                 query_params[name] = value
 
@@ -120,6 +127,7 @@ class RequestBuilder:
             },
             cookies=encode_value(cookie_params),
             json=json_body,
+            data=encode_value(form_params) if form_params else None,
             files=self.multipart_builder.build(file_params),
         )
 
@@ -134,6 +142,7 @@ class RequestBuilder:
                 CookieParam,
                 BodyParam,
                 FileParam,
+                FormParam,
             ),
         )
 

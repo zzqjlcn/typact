@@ -1,9 +1,15 @@
-from falcon.annotations import Body, Cookie, File, Header, Path, Query
+from falcon.annotations import Body, Cookie, File, Form, Header, Path, Query
 from falcon.builder.request_builder import RequestBuilder
 from falcon.client.http_client import HttpClient
 from falcon.converter.response_converter import FalconHttpError, ResponseConverter
 from falcon.core.types import RequestConfig, SimpleResponse
-from falcon.interceptor.auth import ApiKeyInterceptor, BearerTokenInterceptor
+from falcon.interceptor.auth import (
+    ApiKeyInterceptor,
+    BearerTokenInterceptor,
+    CallableTokenProvider,
+    RefreshableBearerTokenInterceptor,
+    TokenProvider,
+)
 from falcon.interceptor.base import InterceptorChain
 from falcon.interceptor.log import LoggingInterceptor
 from falcon.interceptor.trace import TraceIdInterceptor
@@ -18,6 +24,7 @@ __all__ = [
     "Body",
     "Cookie",
     "File",
+    "Form",
     "Header",
     "Path",
     "Query",
@@ -32,7 +39,10 @@ __all__ = [
     "HttpClientError",
     "InterceptorChain",
     "BearerTokenInterceptor",
+    "CallableTokenProvider",
     "ApiKeyInterceptor",
+    "RefreshableBearerTokenInterceptor",
+    "TokenProvider",
     "TraceIdInterceptor",
     "LoggingInterceptor",
     "RequestConfig",

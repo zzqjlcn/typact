@@ -30,7 +30,7 @@ user = await get_user(1)
 
 - 声明式 HTTP Client：用装饰器描述远程 API，而不是手写请求代码。
 - 类型安全响应转换：基于 Pydantic v2 `TypeAdapter` 将响应数据转换为模型、列表或任意类型。
-- FastAPI 风格参数注解：支持 `Path`、`Query`、`Header`、`Cookie`、`Body`、`File`。
+- FastAPI 风格参数注解：支持 `Path`、`Query`、`Header`、`Cookie`、`Body`、`Form`、`File`。
 - 多 Runtime：默认使用标准库 `urllib`，也可按需安装 `httpx` 或 `aiohttp`。
 - 拦截器链：支持请求前和响应后的扩展点，可用于认证、日志、Trace 等。
 - Mock Runtime：无需启动服务即可测试声明式 client 的请求构建结果。
@@ -134,7 +134,7 @@ if __name__ == "__main__":
 Falcon 当前提供以下声明式参数：
 
 ```python
-from falcon import Body, Cookie, File, Header, Path, Query
+from falcon import Body, Cookie, File, Form, Header, Path, Query
 ```
 
 ### Path
@@ -166,6 +166,17 @@ async def get_profile(request_id: str = Header(alias="X-Request-Id")) -> dict:
 ```python
 @client.post("/users")
 async def create_user(payload: dict = Body()) -> dict:
+    pass
+```
+
+### Form
+
+```python
+@client.post("/auth/login")
+async def login(
+    name: str = Form(),
+    password: str = Form(),
+) -> dict:
     pass
 ```
 
@@ -273,9 +284,66 @@ client = HttpClient(
 内置拦截器：
 
 - `BearerTokenInterceptor`
+- `RefreshableBearerTokenInterceptor`
 - `ApiKeyInterceptor`
 - `TraceIdInterceptor`
 - `LoggingInterceptor`
+
+## Token 刷新
+
+如果 token 会过期，可以使用 `CallableTokenProvider` 和 `RefreshableBearerTokenInterceptor`。
+
+当请求返回 401 时，Falcon 会调用 `refresh_token()` 刷新 token，并用新 token 自动重试一次。
+
+```python
+from falcon import (
+    CallableTokenProvider,
+    HttpClient,
+    InterceptorChain,
+    RefreshableBearerTokenInterceptor,
+)
+
+
+async def login() -> str:
+    # 在这里调用 /auth/login，并返回新的 token
+    return "new-token"
+
+
+token_provider = CallableTokenProvider(
+    login,
+    token="expired-token",
+)
+
+client = HttpClient(
+    "https://api.example.com",
+    interceptor_chain=InterceptorChain(
+        request_interceptors=[
+            RefreshableBearerTokenInterceptor(token_provider),
+        ],
+    ),
+)
+```
+
+默认请求头是：
+
+```text
+Authorization: Bearer <token>
+```
+
+如果你的接口和一些内部系统一样，要求直接传 token：
+
+```text
+Authorization: <token>
+```
+
+可以设置 `scheme=None`：
+
+```python
+RefreshableBearerTokenInterceptor(
+    token_provider,
+    scheme=None,
+)
+```
 
 ## 文件上传
 
@@ -306,7 +374,7 @@ await upload_file(("hello.txt", b"hello", "text/plain"))
 
 ```text
 src/falcon/
-├── annotations/      # Path / Query / Header / Cookie / Body / File
+├── annotations/      # Path / Query / Header / Cookie / Body / Form / File
 ├── builder/          # URL、请求、multipart 构建
 ├── client/           # HttpClient、路由装饰器、RouteDefinition
 ├── converter/        # 响应转换器
@@ -361,7 +429,6 @@ uv run python -m compileall src examples
 
 ## 路线图
 
-- Form 参数支持
 - 更完整的 multipart 文件上传能力
 - Retry / Backoff
 - OpenTelemetry

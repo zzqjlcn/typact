@@ -31,3 +31,21 @@ class InterceptorChain:
         for interceptor in self.response_interceptors:
             response = await interceptor.after_response(response)
         return response
+
+    async def refresh_unauthorized(
+        self,
+        config: RequestConfig,
+        response: SimpleResponse,
+    ) -> RequestConfig | None:
+        for interceptor in self.request_interceptors:
+            refresh = getattr(interceptor, "refresh_on_unauthorized", None)
+
+            if refresh is None:
+                continue
+
+            refreshed_config = await refresh(config, response)
+
+            if refreshed_config is not None:
+                return refreshed_config
+
+        return None

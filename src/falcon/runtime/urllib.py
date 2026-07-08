@@ -24,6 +24,14 @@ class UrllibRuntime(ClientRuntime):
         if config.json is not None:
             body = json.dumps(config.json).encode("utf-8")
             headers.setdefault("Content-Type", "application/json")
+        elif config.data is not None:
+            if isinstance(config.data, dict):
+                body = urlencode(config.data, doseq=True).encode("utf-8")
+                headers.setdefault("Content-Type", "application/x-www-form-urlencoded")
+            elif isinstance(config.data, str):
+                body = config.data.encode("utf-8")
+            else:
+                body = config.data
 
         req = Request(
             url=url,
