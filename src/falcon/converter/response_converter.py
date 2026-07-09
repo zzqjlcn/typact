@@ -9,9 +9,7 @@ class FalconHttpError(Exception):
     def __init__(self, status_code: int, content: bytes):
         self.status_code = status_code
         self.content = content
-        super().__init__(
-            f"Falcon request failed: status_code={status_code}, body={content[:500]!r}"
-        )
+        super().__init__(f"Falcon request failed: status_code={status_code}, body={content[:500]!r}")
 
 
 class ResponseConverter:
@@ -21,7 +19,7 @@ class ResponseConverter:
         return_type: Any,
     ):
         if response.status_code >= 400:
-            raise FalconHttpError(response.status_code, response.content)
+            raise FalconHttpError(response.status_code, response.content.decode())
 
         if return_type is None or return_type is type(None):
             return None

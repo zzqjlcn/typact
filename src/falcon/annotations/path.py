@@ -8,6 +8,7 @@ from falcon.annotations.base import MISSING, Param
 class PathParam(Param):
     default: Any = MISSING
     required: bool = True
+    allow_slashes: bool = False
 
 
 def Path(
@@ -15,9 +16,11 @@ def Path(
     *,
     alias: str | None = None,
     required: bool = True,
+    allow_slashes: bool = False,
 ) -> PathParam:
     return PathParam(
         default=default,
         alias=alias,
         required=required,
+        allow_slashes=allow_slashes,
     )

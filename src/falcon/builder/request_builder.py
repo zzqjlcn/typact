@@ -12,7 +12,7 @@ from falcon.annotations.header import HeaderParam
 from falcon.annotations.path import PathParam
 from falcon.annotations.query import QueryParam
 from falcon.builder.multipart_builder import MultipartBuilder
-from falcon.builder.url_builder import UrlBuilder
+from falcon.builder.url_builder import PathValue, UrlBuilder
 from falcon.client.metadata import RouteDefinition
 from falcon.core.types import RequestConfig
 
@@ -62,8 +62,9 @@ class RequestBuilder:
                 raise TypeError(f"Missing required argument: {name}")
 
             if isinstance(marker, PathParam):
-                path_params[marker.alias or name] = value
-                path_params[name] = value
+                path_value = PathValue(value=value, allow_slashes=marker.allow_slashes)
+                path_params[marker.alias or name] = path_value
+                path_params[name] = path_value
 
             elif isinstance(marker, QueryParam):
                 key = marker.alias or name

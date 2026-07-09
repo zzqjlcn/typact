@@ -1,17 +1,15 @@
+import asyncio
 import inspect
 from collections.abc import Awaitable, Callable
 from typing import Protocol
 
-from falcon.core.types import RequestConfig
-from falcon.core.types import SimpleResponse
+from falcon.core.types import RequestConfig, SimpleResponse
 
 
 class TokenProvider(Protocol):
-    async def get_token(self) -> str:
-        ...
+    async def get_token(self) -> str: ...
 
-    async def refresh_token(self) -> str:
-        ...
+    async def refresh_token(self) -> str: ...
 
 
 class CallableTokenProvider:
@@ -23,6 +21,7 @@ class CallableTokenProvider:
     ):
         self.refresh = refresh
         self.token = token
+        self._lock = asyncio.Lock()
 
     async def get_token(self) -> str:
         if self.token is None:
@@ -30,13 +29,14 @@ class CallableTokenProvider:
         return self.token
 
     async def refresh_token(self) -> str:
-        token = self.refresh()
+        async with self._lock:
+            token = self.refresh()
 
-        if inspect.isawaitable(token):
-            token = await token
+            if inspect.isawaitable(token):
+                token = await token
 
-        self.token = token
-        return token
+            self.token = str(token).strip()
+            return self.token
 
 
 class BearerTokenInterceptor:
@@ -80,6 +80,8 @@ class RefreshableBearerTokenInterceptor:
         return config
 
     def _format_token(self, token: str) -> str:
+        token = token.strip()
+
         if self.scheme is None:
             return token
         return f"{self.scheme} {token}"
