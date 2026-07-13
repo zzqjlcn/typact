@@ -86,14 +86,14 @@ class TelegramLoginApi:
             ),
         )
 
-        @self.client.post("/auth/login")
-        async def login(
-            name: str = Form(),
-            password: str = Form(),
-        ) -> dict[str, Any]:
-            pass
+        self.client.request("/auth/login", method="POST")(self.login)
 
-        self.login = login
+    async def login(
+        self,
+        name: str = Form(),
+        password: str = Form(),
+    ) -> dict[str, Any]:
+        raise NotImplementedError
 
     async def close(self):
         await self.client.close()

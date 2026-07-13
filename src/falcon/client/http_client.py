@@ -1,4 +1,6 @@
-from typing import Any
+import inspect
+from collections.abc import Callable, Sequence
+from typing import Any, ParamSpec, TypeVar, overload
 
 from falcon.builder.request_builder import RequestBuilder
 from falcon.client.decorator import create_route_decorator
@@ -7,6 +9,9 @@ from falcon.converter.response_converter import ResponseConverter
 from falcon.interceptor.base import InterceptorChain
 from falcon.runtime.base import ClientRuntime
 from falcon.runtime.urllib import UrllibRuntime
+
+P = ParamSpec("P")
+R = TypeVar("R")
 
 
 class HttpClient:
@@ -43,6 +48,53 @@ class HttpClient:
 
     def delete(self, path: str):
         return create_route_decorator(self, "DELETE", path)
+
+    @overload
+    def request(
+        self,
+        path: str,
+        *,
+        method: str,
+    ) -> Callable[[Callable[P, R]], Callable[P, R]]: ...
+
+    @overload
+    def request(
+        self,
+        path: str,
+        func: Callable[P, R],
+        *,
+        methods: Sequence[str],
+    ) -> Callable[P, R]: ...
+
+    def request(
+        self,
+        path: str,
+        func: Callable[P, R] | None = None,
+        *,
+        method: str | None = None,
+        methods: Sequence[str] | None = None,
+    ):
+        if method is not None and methods is not None:
+            raise TypeError("method and methods cannot be used together")
+
+        route_methods = [method] if method is not None else list(methods or ())
+        if len(route_methods) != 1:
+            raise ValueError("request requires exactly one HTTP method")
+
+        decorator = create_route_decorator(self, route_methods[0], path)
+
+        def register(route_func: Callable[P, R]) -> Callable[P, R]:
+            wrapper = decorator(route_func)
+
+            if inspect.ismethod(route_func) and route_func.__self__ is not None:
+                setattr(route_func.__self__, route_func.__name__, wrapper)
+
+            return wrapper
+
+        if func is None:
+            return register
+
+        return register(func)
 
     async def execute(
         self,
