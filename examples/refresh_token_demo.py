@@ -1,7 +1,7 @@
 import asyncio
 from typing import Any
 
-from falcon import (
+from typact import (
     CallableTokenProvider,
     HttpClient,
     InterceptorChain,
@@ -30,8 +30,8 @@ runtime.add_responses(
         SimpleResponse(
             status_code=200,
             headers={},
-            content=b'{"id":1,"name":"falcon"}',
-            json_data={"id": 1, "name": "falcon"},
+            content=b'{"id":1,"name":"typact"}',
+            json_data={"id": 1, "name": "typact"},
         ),
     ],
 )

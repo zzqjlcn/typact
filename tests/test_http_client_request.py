@@ -3,7 +3,7 @@ import inspect
 import unittest
 from typing import Any
 
-from falcon import Form, HttpClient, MockRuntime
+from typact import Form, HttpClient, MockRuntime
 
 
 class LoginApi:

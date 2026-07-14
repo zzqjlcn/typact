@@ -7,7 +7,7 @@ from typing import Annotated, Any, Literal, TypeAlias
 import httpx
 from pydantic import BaseModel, Field
 
-from falcon import (
+from typact import (
     Body,
     CallableTokenProvider,
     Form,
@@ -17,7 +17,6 @@ from falcon import (
     Path,
     RefreshableBearerTokenInterceptor,
 )
-
 
 QueryType: TypeAlias = Literal["default", "txt", "audio", "image", "file", "video"]
 LimitInt: TypeAlias = Annotated[int, Field(ge=1, le=5000, description="分页条数，1~5000")]

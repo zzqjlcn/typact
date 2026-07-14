@@ -2,7 +2,7 @@ import asyncio
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from falcon import (
+from typact import (
     Body,
     Header,
     HttpClient,
@@ -26,7 +26,7 @@ class Todo(BaseModel):
 client = HttpClient(
     base_url="https://jsonplaceholder.typicode.com",
     headers={
-        "User-Agent": "falcon/0.1.0",
+        "User-Agent": "typact/0.1.0",
     },
     interceptor_chain=InterceptorChain(
         request_interceptors=[
@@ -88,7 +88,7 @@ async def main():
     created = await create_todo(
         Todo(
             user_id=1,
-            title="hello falcon",
+            title="hello typact",
             completed=False,
         )
     )

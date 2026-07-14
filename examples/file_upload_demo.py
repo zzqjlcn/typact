@@ -1,7 +1,7 @@
 import asyncio
 from typing import Any
 
-from falcon import File, HttpClient, MockRuntime
+from typact import File, HttpClient, MockRuntime
 
 
 runtime = MockRuntime()
@@ -31,7 +31,7 @@ async def upload_file(
 
 
 async def main():
-    result = await upload_file(b"hello falcon")
+    result = await upload_file(b"hello typact")
     print("result:", result)
 
     request = runtime.requests[0]

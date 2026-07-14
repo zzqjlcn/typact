@@ -1,7 +1,7 @@
 import asyncio
 from typing import Any
 
-from falcon import (
+from typact import (
     ApiKeyInterceptor,
     BearerTokenInterceptor,
     HttpClient,
@@ -16,7 +16,7 @@ runtime.add_response(
     "http://test.local/profile",
     json_data={
         "id": 1,
-        "name": "falcon",
+        "name": "typact",
     },
 )
 

@@ -1,13 +1,13 @@
-# Falcon
+# Typact
 
-Falcon 是一个面向 Python 的声明式、类型安全、可插拔 Runtime 的 HTTP 服务调用框架。
+Typact 是一个面向 Python 的声明式、类型安全、可插拔 Runtime 的 HTTP 服务调用框架。
 
 它让你用类似 FastAPI 参数声明的方式定义远程 HTTP API，同时把请求构建、运行时传输、响应转换、认证、日志、Mock 测试拆成清晰的模块。
 
 ```python
 from pydantic import BaseModel
 
-from falcon import HttpClient, Path
+from typact import HttpClient, Path
 
 
 class User(BaseModel):
@@ -41,19 +41,19 @@ user = await get_user(1)
 核心安装只依赖 `pydantic`，默认 Runtime 使用 Python 标准库 `urllib`。
 
 ```bash
-pip install falcon
+pip install typact
 ```
 
 如果需要 `httpx` Runtime：
 
 ```bash
-pip install "falcon[httpx]"
+pip install "typact[httpx]"
 ```
 
 如果需要 `aiohttp` Runtime：
 
 ```bash
-pip install "falcon[aiohttp]"
+pip install "typact[aiohttp]"
 ```
 
 本仓库本地开发：
@@ -69,7 +69,7 @@ import asyncio
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from falcon import Body, Header, HttpClient, Path, Query
+from typact import Body, Header, HttpClient, Path, Query
 
 
 class Todo(BaseModel):
@@ -112,7 +112,7 @@ async def main():
     print(todos[0])
 
     created = await create_todo(
-        Todo(user_id=1, title="hello falcon", completed=False)
+        Todo(user_id=1, title="hello typact", completed=False)
     )
     print(created)
 
@@ -131,10 +131,10 @@ if __name__ == "__main__":
 
 ## 参数注解
 
-Falcon 当前提供以下声明式参数：
+Typact 当前提供以下声明式参数：
 
 ```python
-from falcon import Body, Cookie, File, Form, Header, Path, Query
+from typact import Body, Cookie, File, Form, Header, Path, Query
 ```
 
 ### Path
@@ -183,7 +183,7 @@ async def login(
 ### File
 
 ```python
-from falcon import File
+from typact import File
 
 
 @client.post("/upload")
@@ -201,10 +201,10 @@ async def upload_avatar(
 
 ## Runtime
 
-Falcon 的核心不会绑定某个 HTTP 库。`HttpClient` 默认使用 `UrllibRuntime`，不需要安装额外依赖。
+Typact 的核心不会绑定某个 HTTP 库。`HttpClient` 默认使用 `UrllibRuntime`，不需要安装额外依赖。
 
 ```python
-from falcon import HttpClient
+from typact import HttpClient
 
 
 client = HttpClient("https://api.example.com")
@@ -215,7 +215,7 @@ client = HttpClient("https://api.example.com")
 ```python
 import httpx
 
-from falcon import HttpClient, HttpxRuntime
+from typact import HttpClient, HttpxRuntime
 
 
 client = HttpClient(
@@ -227,7 +227,7 @@ client = HttpClient(
 使用 `aiohttp`：
 
 ```python
-from falcon import AioHttpRuntime, HttpClient
+from typact import AioHttpRuntime, HttpClient
 
 
 client = HttpClient(
@@ -239,14 +239,14 @@ client = HttpClient(
 使用 Mock：
 
 ```python
-from falcon import HttpClient, MockRuntime, Path
+from typact import HttpClient, MockRuntime, Path
 
 
 runtime = MockRuntime()
 runtime.add_response(
     "GET",
     "http://test.local/users/1",
-    json_data={"id": 1, "name": "falcon"},
+    json_data={"id": 1, "name": "typact"},
 )
 
 client = HttpClient("http://test.local", client_runtime=runtime)
@@ -262,7 +262,7 @@ async def get_user(user_id: int = Path()) -> dict:
 拦截器可以在请求发送前或响应转换前处理数据。
 
 ```python
-from falcon import (
+from typact import (
     ApiKeyInterceptor,
     BearerTokenInterceptor,
     HttpClient,
@@ -293,10 +293,10 @@ client = HttpClient(
 
 如果 token 会过期，可以使用 `CallableTokenProvider` 和 `RefreshableBearerTokenInterceptor`。
 
-当请求返回 401 时，Falcon 会调用 `refresh_token()` 刷新 token，并用新 token 自动重试一次。
+当请求返回 401 时，Typact 会调用 `refresh_token()` 刷新 token，并用新 token 自动重试一次。
 
 ```python
-from falcon import (
+from typact import (
     CallableTokenProvider,
     HttpClient,
     InterceptorChain,
@@ -348,7 +348,7 @@ RefreshableBearerTokenInterceptor(
 ## 文件上传
 
 ```python
-from falcon import File, HttpClient
+from typact import File, HttpClient
 
 
 client = HttpClient("https://api.example.com")
@@ -364,7 +364,7 @@ async def upload_file(
     pass
 ```
 
-如果直接传入 `httpx` 风格 tuple，Falcon 会原样传递：
+如果直接传入 `httpx` 风格 tuple，Typact 会原样传递：
 
 ```python
 await upload_file(("hello.txt", b"hello", "text/plain"))
@@ -373,7 +373,7 @@ await upload_file(("hello.txt", b"hello", "text/plain"))
 ## 项目结构
 
 ```text
-src/falcon/
+src/typact/
 ├── annotations/      # Path / Query / Header / Cookie / Body / Form / File
 ├── builder/          # URL、请求、multipart 构建
 ├── client/           # HttpClient、路由装饰器、RouteDefinition
@@ -386,7 +386,7 @@ src/falcon/
 
 ## 设计理念
 
-Falcon 的核心流水线是：
+Typact 的核心流水线是：
 
 ```text
 Decorator
