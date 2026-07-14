@@ -1,4 +1,4 @@
-from typact.annotations import Body, Cookie, File, Form, Header, Path, Query
+from typact.annotations import Body, Cookie, File, FileData, Form, Header, Path, Query
 from typact.builder.request_builder import RequestBuilder
 from typact.client.http_client import HttpClient
 from typact.converter.response_converter import TypactHttpError, ResponseConverter
@@ -24,6 +24,7 @@ __all__ = [
     "Body",
     "Cookie",
     "File",
+    "FileData",
     "Form",
     "Header",
     "Path",

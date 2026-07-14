@@ -1,6 +1,6 @@
 from typact.annotations.body import Body, BodyParam
 from typact.annotations.cookie import Cookie, CookieParam
-from typact.annotations.file import File, FileParam
+from typact.annotations.file import File, FileData, FileParam
 from typact.annotations.form import Form, FormParam
 from typact.annotations.header import Header, HeaderParam
 from typact.annotations.path import Path, PathParam
@@ -12,6 +12,7 @@ __all__ = [
     "Cookie",
     "CookieParam",
     "File",
+    "FileData",
     "FileParam",
     "Form",
     "FormParam",

@@ -1,6 +1,6 @@
 from typing import Any
 
-from typact.annotations.file import FileParam
+from typact.annotations.file import FileData, FileParam
 
 
 class MultipartBuilder:
@@ -12,25 +12,21 @@ class MultipartBuilder:
                 continue
 
             field_name = marker.alias or name
-            files[field_name] = self._build_file_value(field_name, marker, value)
+            files[field_name] = self._build_file_value(field_name, value)
 
         return files
 
     @staticmethod
     def _build_file_value(
         field_name: str,
-        marker: FileParam,
         value: Any,
     ) -> Any:
-        if isinstance(value, tuple):
+        if not isinstance(value, FileData):
             return value
 
-        if marker.filename is None and marker.content_type is None:
-            return value
+        filename = value.filename or getattr(value.content, "name", field_name)
 
-        filename = marker.filename or getattr(value, "name", field_name)
+        if value.content_type is None:
+            return (filename, value.content)
 
-        if marker.content_type is None:
-            return (filename, value)
-
-        return (filename, value, marker.content_type)
+        return (filename, value.content, value.content_type)

@@ -183,21 +183,39 @@ async def login(
 ### File
 
 ```python
-from typact import File
+from typact import File, FileData
 
 
 @client.post("/upload")
 async def upload_avatar(
-    avatar: bytes = File(
-        alias="file",
-        filename="avatar.txt",
-        content_type="text/plain",
-    ),
+    avatar: FileData = File(alias="file"),
 ) -> dict:
     pass
+
+
+await upload_avatar(
+    FileData(
+        content=b"hello typact",
+        filename="avatar.txt",
+        content_type="text/plain",
+    )
+)
 ```
 
-`File(...)` 会被构建为 Runtime 可直接消费的 `RequestConfig.files`。
+`File(...)` 只声明文件字段的名称、默认值和是否必填；`FileData(...)`
+描述本次上传的内容、文件名和媒体类型。构建请求时，它们会被转换为 Runtime
+可直接消费的 `RequestConfig.files`。
+
+只需要上传字节内容时，也可以直接使用 `bytes` 参数：
+
+```python
+@client.post("/upload/raw")
+async def upload_raw(file: bytes = File()) -> dict:
+    pass
+
+
+await upload_raw(b"hello typact")
+```
 
 ## Runtime
 
@@ -348,7 +366,7 @@ RefreshableBearerTokenInterceptor(
 ## 文件上传
 
 ```python
-from typact import File, HttpClient
+from typact import File, FileData, HttpClient
 
 
 client = HttpClient("https://api.example.com")
@@ -356,19 +374,23 @@ client = HttpClient("https://api.example.com")
 
 @client.post("/upload")
 async def upload_file(
-    file: bytes = File(
-        filename="hello.txt",
-        content_type="text/plain",
-    ),
+    file: FileData = File(),
 ) -> dict:
     pass
+
+
+await upload_file(
+    FileData(
+        content=b"hello",
+        filename="hello.txt",
+        content_type="text/plain",
+    )
+)
 ```
 
-如果直接传入 `httpx` 风格 tuple，Typact 会原样传递：
-
-```python
-await upload_file(("hello.txt", b"hello", "text/plain"))
-```
+文件名和媒体类型属于每次调用的数据，因此由 `FileData` 携带，而不是固定在
+接口声明中。`content` 支持 `bytes` 和二进制文件对象；如果不需要指定文件名或
+媒体类型，可以让接口接收 `bytes = File()` 并直接传入字节内容。
 
 ## 项目结构
 
@@ -438,4 +460,4 @@ uv run python -m compileall src examples
 
 ## License
 
-TBD
+本项目基于 [MIT License](LICENSE) 开源。

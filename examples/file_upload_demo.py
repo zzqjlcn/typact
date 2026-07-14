@@ -1,7 +1,7 @@
 import asyncio
 from typing import Any
 
-from typact import File, HttpClient, MockRuntime
+from typact import File, FileData, HttpClient, MockRuntime
 
 
 runtime = MockRuntime()
@@ -21,17 +21,19 @@ client = HttpClient(
 
 @client.post("/upload")
 async def upload_file(
-    avatar: bytes = File(
-        alias="file",
-        filename="avatar.txt",
-        content_type="text/plain",
-    ),
+    avatar: FileData = File(alias="file"),
 ) -> dict[str, Any]:
     pass
 
 
 async def main():
-    result = await upload_file(b"hello typact")
+    result = await upload_file(
+        FileData(
+            content=b"hello typact",
+            filename="avatar.txt",
+            content_type="text/plain",
+        )
+    )
     print("result:", result)
 
     request = runtime.requests[0]

@@ -3,7 +3,7 @@ import inspect
 import unittest
 from typing import Any
 
-from typact import Form, HttpClient, MockRuntime
+from typact import File, FileData, Form, HttpClient, MockRuntime
 
 
 class LoginApi:
@@ -28,6 +28,19 @@ class DirectLoginApi:
         self,
         name: str = Form(),
         password: str = Form(),
+    ) -> dict[str, Any]:
+        raise NotImplementedError
+
+
+class UploadApi:
+    def __init__(self, runtime: MockRuntime):
+        self.client = HttpClient("https://example.test", client_runtime=runtime)
+        self.client.request("/upload", method="POST")(self.upload)
+
+    async def upload(
+        self,
+        attachment: FileData = File(alias="file"),
+        raw: bytes = File(),
     ) -> dict[str, Any]:
         raise NotImplementedError
 
@@ -61,6 +74,35 @@ class HttpClientRequestTest(unittest.TestCase):
 
         self.assertEqual(result, {"ok": True})
         self.assertEqual(runtime.requests[0].method, "POST")
+
+    def test_builds_file_data_and_preserves_bytes(self):
+        runtime = MockRuntime()
+        runtime.add_response(
+            "POST",
+            "https://example.test/upload",
+            json_data={"ok": True},
+        )
+        api = UploadApi(runtime)
+
+        result = asyncio.run(
+            api.upload(
+                FileData(
+                    content=b"report",
+                    filename="report.txt",
+                    content_type="text/plain",
+                ),
+                b"raw content",
+            )
+        )
+
+        self.assertEqual(result, {"ok": True})
+        self.assertEqual(
+            runtime.requests[0].files,
+            {
+                "file": ("report.txt", b"report", "text/plain"),
+                "raw": b"raw content",
+            },
+        )
 
 
 if __name__ == "__main__":

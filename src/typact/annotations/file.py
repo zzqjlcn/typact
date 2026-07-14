@@ -1,11 +1,17 @@
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, BinaryIO
 
 from typact.annotations.base import MISSING, Param
 
 
 @dataclass(slots=True)
 class FileParam(Param):
+    pass
+
+
+@dataclass(slots=True)
+class FileData:
+    content: bytes | BinaryIO
     filename: str | None = None
     content_type: str | None = None
 
@@ -15,8 +21,6 @@ def File(
     *,
     alias: str | None = None,
     required: bool | None = None,
-    filename: str | None = None,
-    content_type: str | None = None,
 ) -> FileParam:
     if required is None:
         required = default is MISSING
@@ -25,6 +29,4 @@ def File(
         default=default,
         alias=alias,
         required=required,
-        filename=filename,
-        content_type=content_type,
     )
