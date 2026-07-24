@@ -1,3 +1,3 @@
-from typact.core.types import RequestConfig, SimpleResponse
+from typact.core.types import RequestConfig, Response, SimpleResponse
 
-__all__ = ["RequestConfig", "SimpleResponse"]
+__all__ = ["RequestConfig", "Response", "SimpleResponse"]

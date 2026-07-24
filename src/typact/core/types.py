@@ -15,7 +15,7 @@ class RequestConfig:
 
 
 @dataclass
-class SimpleResponse:
+class Response:
     status_code: int
     headers: dict[str, str]
     content: bytes
@@ -23,3 +23,10 @@ class SimpleResponse:
 
     def json(self) -> Any:
         return self.json_data
+
+    @property
+    def text(self) -> str:
+        return self.content.decode("utf-8")
+
+
+SimpleResponse = Response

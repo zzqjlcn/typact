@@ -2,7 +2,7 @@ from typact.annotations import Body, Cookie, File, FileData, Form, Header, Path,
 from typact.builder.request_builder import RequestBuilder
 from typact.client.http_client import HttpClient
 from typact.converter.response_converter import TypactHttpError, ResponseConverter
-from typact.core.types import RequestConfig, SimpleResponse
+from typact.core.types import RequestConfig, Response, SimpleResponse
 from typact.interceptor.auth import (
     ApiKeyInterceptor,
     BearerTokenInterceptor,
@@ -47,6 +47,7 @@ __all__ = [
     "TraceIdInterceptor",
     "LoggingInterceptor",
     "RequestConfig",
+    "Response",
     "SimpleResponse",
     "HttpxClientRuntime",
     "AioHttpClientRuntime",

@@ -228,6 +228,28 @@ from typact import HttpClient
 client = HttpClient("https://api.example.com")
 ```
 
+所有 Runtime 都可以映射为统一的 `typact.Response`：
+
+```python
+from typact import Response
+
+
+@client.get("/health")
+async def health() -> Response:
+    pass
+
+
+response = await health()
+print(response.status_code)
+print(response.headers)
+print(response.content)
+print(response.text)
+print(response.json())
+```
+
+返回类型声明为 `Response` 时，Typact 不会为 4xx/5xx 自动抛出
+`TypactHttpError`，由调用方根据 `response.status_code` 处理。
+
 使用 `httpx`：
 
 ```python
@@ -392,6 +414,22 @@ await upload_file(
 接口声明中。`content` 支持 `bytes` 和二进制文件对象；如果不需要指定文件名或
 媒体类型，可以让接口接收 `bytes = File()` 并直接传入字节内容。
 
+## 文件下载
+
+将接口返回类型声明为 `bytes`，Typact 会直接返回原始响应体，不经过 JSON
+解析或 Pydantic 转换：
+
+```python
+@client.get("/files/report.pdf")
+async def download_file() -> bytes:
+    pass
+
+
+content = await download_file()
+```
+
+空文件会返回 `b""`。
+
 ## 项目结构
 
 ```text
@@ -400,7 +438,7 @@ src/typact/
 ├── builder/          # URL、请求、multipart 构建
 ├── client/           # HttpClient、路由装饰器、RouteDefinition
 ├── converter/        # 响应转换器
-├── core/             # RequestConfig、SimpleResponse
+├── core/             # RequestConfig、Response
 ├── interceptor/      # 认证、日志、Trace、拦截器链
 ├── runtime/          # urllib、httpx、aiohttp、mock
 └── testing/          # 测试辅助导出
@@ -424,7 +462,7 @@ Decorator
 - Decorator 收集函数签名和返回类型。
 - RequestBuilder 将调用参数转换成 `RequestConfig`。
 - InterceptorChain 负责横切逻辑。
-- Runtime 只负责发送请求并返回 `SimpleResponse`。
+- Runtime 只负责发送请求并返回统一的 `Response`。
 - ResponseConverter 只负责把响应转换成目标类型。
 
 ## 开发

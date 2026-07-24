@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from typact.core.types import RequestConfig, SimpleResponse
+from typact.core.types import RequestConfig, Response
 
 
 class RequestInterceptor(Protocol):
@@ -9,7 +9,7 @@ class RequestInterceptor(Protocol):
 
 
 class ResponseInterceptor(Protocol):
-    async def after_response(self, response: SimpleResponse) -> SimpleResponse:
+    async def after_response(self, response: Response) -> Response:
         ...
 
 
@@ -27,7 +27,7 @@ class InterceptorChain:
             config = await interceptor.before_request(config)
         return config
 
-    async def apply_response(self, response: SimpleResponse) -> SimpleResponse:
+    async def apply_response(self, response: Response) -> Response:
         for interceptor in self.response_interceptors:
             response = await interceptor.after_response(response)
         return response
@@ -35,7 +35,7 @@ class InterceptorChain:
     async def refresh_unauthorized(
         self,
         config: RequestConfig,
-        response: SimpleResponse,
+        response: Response,
     ) -> RequestConfig | None:
         for interceptor in self.request_interceptors:
             refresh = getattr(interceptor, "refresh_on_unauthorized", None)

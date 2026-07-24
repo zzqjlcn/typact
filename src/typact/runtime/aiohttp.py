@@ -1,6 +1,6 @@
 from typing import Any
 
-from typact.core.types import RequestConfig, SimpleResponse
+from typact.core.types import RequestConfig, Response
 from typact.runtime.base import ClientRuntime
 
 
@@ -20,7 +20,7 @@ class AioHttpRuntime(ClientRuntime):
             self.session = self._aiohttp.ClientSession()
         return self.session
 
-    async def request(self, config: RequestConfig) -> SimpleResponse:
+    async def request(self, config: RequestConfig) -> Response:
         session = await self._get_session()
 
         async with session.request(
@@ -42,7 +42,7 @@ class AioHttpRuntime(ClientRuntime):
                 except Exception:
                     json_data = None
 
-            return SimpleResponse(
+            return Response(
                 status_code=response.status,
                 headers=dict(response.headers),
                 content=content,

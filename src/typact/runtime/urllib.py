@@ -3,15 +3,15 @@ from asyncio import to_thread
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-from typact.core.types import RequestConfig, SimpleResponse
+from typact.core.types import RequestConfig, Response
 from typact.runtime.base import ClientRuntime
 
 
 class UrllibRuntime(ClientRuntime):
-    async def request(self, config: RequestConfig) -> SimpleResponse:
+    async def request(self, config: RequestConfig) -> Response:
         return await to_thread(self._request_sync, config)
 
-    def _request_sync(self, config: RequestConfig) -> SimpleResponse:
+    def _request_sync(self, config: RequestConfig) -> Response:
         url = config.url
 
         if config.params:
@@ -51,7 +51,7 @@ class UrllibRuntime(ClientRuntime):
                 except Exception:
                     json_data = None
 
-            return SimpleResponse(
+            return Response(
                 status_code=response.status,
                 headers=dict(response.headers),
                 content=content,

@@ -7,7 +7,7 @@ from typact import (
     InterceptorChain,
     MockRuntime,
     RefreshableBearerTokenInterceptor,
-    SimpleResponse,
+    Response,
 )
 
 
@@ -21,13 +21,13 @@ runtime.add_responses(
     "GET",
     "http://test.local/profile",
     [
-        SimpleResponse(
+        Response(
             status_code=401,
             headers={},
             content=b'{"detail":"token expired"}',
             json_data={"detail": "token expired"},
         ),
-        SimpleResponse(
+        Response(
             status_code=200,
             headers={},
             content=b'{"id":1,"name":"typact"}',

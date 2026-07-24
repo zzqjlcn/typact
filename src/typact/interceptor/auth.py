@@ -3,7 +3,7 @@ import inspect
 from collections.abc import Awaitable, Callable
 from typing import Protocol
 
-from typact.core.types import RequestConfig, SimpleResponse
+from typact.core.types import RequestConfig, Response
 
 
 class TokenProvider(Protocol):
@@ -70,7 +70,7 @@ class RefreshableBearerTokenInterceptor:
     async def refresh_on_unauthorized(
         self,
         config: RequestConfig,
-        response: SimpleResponse,
+        response: Response,
     ) -> RequestConfig | None:
         if not self.retry_on_unauthorized or response.status_code != 401:
             return None

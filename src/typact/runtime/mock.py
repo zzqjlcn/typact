@@ -1,13 +1,13 @@
 import json
 
-from typact.core.types import RequestConfig, SimpleResponse
+from typact.core.types import RequestConfig, Response
 from typact.runtime.base import ClientRuntime
 
 
 class MockRuntime(ClientRuntime):
     def __init__(self):
-        self.routes: dict[tuple[str, str], SimpleResponse] = {}
-        self.response_queues: dict[tuple[str, str], list[SimpleResponse]] = {}
+        self.routes: dict[tuple[str, str], Response] = {}
+        self.response_queues: dict[tuple[str, str], list[Response]] = {}
         self.requests: list[RequestConfig] = []
 
     def add_response(
@@ -27,7 +27,7 @@ class MockRuntime(ClientRuntime):
                 else b""
             )
 
-        self.routes[(method.upper(), url)] = SimpleResponse(
+        self.routes[(method.upper(), url)] = Response(
             status_code=status_code,
             headers=headers or {},
             content=content,
@@ -38,11 +38,11 @@ class MockRuntime(ClientRuntime):
         self,
         method: str,
         url: str,
-        responses: list[SimpleResponse],
+        responses: list[Response],
     ):
         self.response_queues[(method.upper(), url)] = responses
 
-    async def request(self, config: RequestConfig) -> SimpleResponse:
+    async def request(self, config: RequestConfig) -> Response:
         self.requests.append(self._snapshot_config(config))
 
         key = (config.method.upper(), config.url)
@@ -51,7 +51,7 @@ class MockRuntime(ClientRuntime):
             return self.response_queues[key].pop(0)
 
         if key not in self.routes:
-            return SimpleResponse(
+            return Response(
                 status_code=404,
                 headers={},
                 content=b'{"detail":"mock response not found"}',

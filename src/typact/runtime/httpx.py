@@ -1,6 +1,6 @@
 from typing import Any
 
-from typact.core.types import RequestConfig, SimpleResponse
+from typact.core.types import RequestConfig, Response
 from typact.runtime.base import ClientRuntime
 
 
@@ -13,7 +13,7 @@ class HttpxRuntime(ClientRuntime):
 
         self.client = client or httpx.AsyncClient()
 
-    async def request(self, config: RequestConfig) -> SimpleResponse:
+    async def request(self, config: RequestConfig) -> Response:
         response = await self.client.request(
             method=config.method,
             url=config.url,
@@ -33,7 +33,7 @@ class HttpxRuntime(ClientRuntime):
             except Exception:
                 json_data = None
 
-        return SimpleResponse(
+        return Response(
             status_code=response.status_code,
             headers=dict(response.headers),
             content=response.content,

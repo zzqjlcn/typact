@@ -3,7 +3,7 @@ import inspect
 import unittest
 from typing import Any
 
-from typact import File, FileData, Form, HttpClient, MockRuntime
+from typact import File, FileData, Form, HttpClient, MockRuntime, Response
 
 
 class LoginApi:
@@ -42,6 +42,19 @@ class UploadApi:
         attachment: FileData = File(alias="file"),
         raw: bytes = File(),
     ) -> dict[str, Any]:
+        raise NotImplementedError
+
+
+class DownloadApi:
+    def __init__(self, runtime: MockRuntime):
+        self.client = HttpClient("https://example.test", client_runtime=runtime)
+        self.client.request("/download", method="GET")(self.download)
+        self.client.request("/download-response", method="GET")(self.download_response)
+
+    async def download(self) -> bytes:
+        raise NotImplementedError
+
+    async def download_response(self) -> Response:
         raise NotImplementedError
 
 
@@ -103,6 +116,52 @@ class HttpClientRequestTest(unittest.TestCase):
                 "raw": b"raw content",
             },
         )
+
+    def test_returns_raw_bytes_from_download(self):
+        runtime = MockRuntime()
+        runtime.add_response(
+            "GET",
+            "https://example.test/download",
+            content=b"\x00\x01typact\xff",
+        )
+        api = DownloadApi(runtime)
+
+        result = asyncio.run(api.download())
+
+        self.assertEqual(result, b"\x00\x01typact\xff")
+
+    def test_returns_empty_bytes_from_download(self):
+        runtime = MockRuntime()
+        runtime.add_response(
+            "GET",
+            "https://example.test/download",
+            content=b"",
+        )
+        api = DownloadApi(runtime)
+
+        result = asyncio.run(api.download())
+
+        self.assertEqual(result, b"")
+
+    def test_returns_typact_response_for_error_status(self):
+        runtime = MockRuntime()
+        runtime.add_response(
+            "GET",
+            "https://example.test/download-response",
+            status_code=404,
+            json_data={"detail": "not found"},
+            headers={"X-Request-Id": "request-id"},
+        )
+        api = DownloadApi(runtime)
+
+        result = asyncio.run(api.download_response())
+
+        self.assertIsInstance(result, Response)
+        self.assertEqual(result.status_code, 404)
+        self.assertEqual(result.headers["X-Request-Id"], "request-id")
+        self.assertEqual(result.content, b'{"detail": "not found"}')
+        self.assertEqual(result.text, '{"detail": "not found"}')
+        self.assertEqual(result.json(), {"detail": "not found"})
 
 
 if __name__ == "__main__":
