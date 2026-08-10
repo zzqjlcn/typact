@@ -3,7 +3,7 @@ const { compact = false } = Astro.props;
 ---
 <a class:list={["brand", { compact }]} href="/" aria-label="Typact 首页">
   <span class="brand-mark" aria-hidden="true">
-    <span class="angle">‹</span><span class="t">T</span><span class="line"></span><span class="angle cyan">›</span>
+    <span class="angle">‹</span><span class="t">T</span><span class="angle cyan">›</span>
   </span>
   {!compact && <span>Typact</span>}
 </a>
@@ -13,7 +13,6 @@ const { compact = false } = Astro.props;
   .brand-mark { display: inline-flex; align-items: center; height: 2rem; color: var(--accent); font-family: var(--mono); font-weight: 800; letter-spacing: -.18em; }
   .angle { font-size: 2rem; line-height: 1; }
   .angle.cyan { color: var(--cyan); }
-  .t { font-size: 1.2rem; position: relative; z-index: 1; }
-  .line { width: .52rem; height: 1px; background: linear-gradient(90deg, var(--accent), var(--cyan)); }
+  .t { font-size: 1.5rem; position: relative; z-index: 1; }
   .compact { gap: 0; }
 </style>
