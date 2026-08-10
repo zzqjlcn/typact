@@ -1,6 +1,18 @@
 ---
 import Brand from '../components/Brand.astro';
 import '../styles/global.css';
+
+let packageVersion = '0.1.4';
+
+try {
+  const response = await fetch('https://pypi.org/pypi/typact/json');
+  if (response.ok) {
+    const data = await response.json();
+    packageVersion = data.info.version;
+  }
+} catch {
+  // Keep the last known version when PyPI is temporarily unavailable.
+}
 ---
 <!doctype html>
 <html lang="zh-CN" data-theme="dark">
@@ -11,7 +23,7 @@ import '../styles/global.css';
     <section class="hero">
       <div class="grid-glow"></div>
       <div class="hero-copy">
-        <div class="signal"><i></i> Python 3.13+ · v0.1.4</div>
+        <div class="signal"><i></i> Python 3.13+ · v{packageVersion}</div>
         <h1>让类型<br><span>成为契约。</span></h1>
         <p>用熟悉的参数声明定义远程 API。Typact 接管请求构建、传输、转换与测试。</p>
         <div class="hero-actions"><a class="primary" href="/docs/getting-started/">阅读文档 <span>→</span></a><button class="install" data-copy="pip install typact"><code>pip install typact</code><span>复制</span></button></div>
