@@ -1,0 +1,68 @@
+---
+import Brand from '../components/Brand.astro';
+import '../styles/global.css';
+
+const { frontmatter } = Astro.props;
+const current = Astro.url.pathname;
+const groups = [
+  { title: '开始', links: [['快速开始', '/docs/getting-started/'], ['核心概念', '/docs/concepts/']] },
+  { title: '功能', links: [['参数注解', '/docs/annotations/'], ['Runtime', '/docs/runtime/'], ['拦截器', '/docs/interceptors/'], ['测试', '/docs/testing/']] },
+];
+---
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content={frontmatter.description ?? 'Typact 文档'} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>{frontmatter.title} · Typact</title>
+    <script is:inline>document.documentElement.dataset.theme = localStorage.getItem('typact-theme') || 'dark';</script>
+  </head>
+  <body>
+    <header class="topbar">
+      <Brand />
+      <nav class="top-actions" aria-label="辅助导航">
+        <a href="/docs/getting-started/">文档</a>
+        <a href="https://pypi.org/project/typact/" target="_blank" rel="noreferrer">PyPI ↗</a>
+        <button id="theme-toggle" aria-label="切换颜色主题">◐</button>
+        <button id="menu-toggle" class="menu-toggle" aria-label="打开菜单">菜单</button>
+      </nav>
+    </header>
+    <div class="docs-shell">
+      <aside class="sidebar" id="sidebar">
+        <div class="version">文档 <span>v0.1.4</span></div>
+        {groups.map(group => <section>
+          <h2>{group.title}</h2>
+          {group.links.map(([label, href]) => <a class:list={{ active: current === href }} href={href}>{label}</a>)}
+        </section>)}
+      </aside>
+      <main class="doc-main">
+        <div class="eyebrow">TYPED HTTP CONTRACTS</div>
+        <article class="prose"><slot /></article>
+        <nav class="doc-footer">
+          <span>Typact · MIT License</span>
+          <a href="/">返回首页 ↑</a>
+        </nav>
+      </main>
+      <aside class="toc" aria-label="本页目录"><strong>本页内容</strong><nav id="toc-links"></nav></aside>
+    </div>
+    <script>
+      const root = document.documentElement;
+      document.querySelector('#theme-toggle')?.addEventListener('click', () => {
+        const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+        root.dataset.theme = next; localStorage.setItem('typact-theme', next);
+      });
+      document.querySelector('#menu-toggle')?.addEventListener('click', () => document.querySelector('#sidebar')?.classList.toggle('open'));
+      const toc = document.querySelector('#toc-links');
+      document.querySelectorAll('.prose h2').forEach((heading) => {
+        const a = document.createElement('a'); a.href = `#${heading.id}`; a.textContent = heading.textContent; toc?.append(a);
+      });
+      document.querySelectorAll('pre').forEach((pre) => {
+        const button = document.createElement('button'); button.className = 'copy'; button.textContent = '复制';
+        button.addEventListener('click', async () => { await navigator.clipboard.writeText(pre.textContent || ''); button.textContent = '已复制'; setTimeout(() => button.textContent = '复制', 1200); });
+        pre.append(button);
+      });
+    </script>
+  </body>
+</html>

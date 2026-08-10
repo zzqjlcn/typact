@@ -1,0 +1,83 @@
+---
+import Brand from '../components/Brand.astro';
+import '../styles/global.css';
+---
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"><meta name="description" content="Typact — 声明式、类型安全、可插拔 Runtime 的 Python HTTP Client"><link rel="icon" href="/favicon.svg"><title>Typact · Typed HTTP contracts for Python</title></head>
+<body class="home">
+  <header class="topbar home-nav"><Brand /><nav class="top-actions"><a href="/docs/getting-started/">文档</a><a href="https://pypi.org/project/typact/">PyPI ↗</a><a class="nav-cta" href="/docs/getting-started/">开始使用</a></nav></header>
+  <main>
+    <section class="hero">
+      <div class="grid-glow"></div>
+      <div class="hero-copy">
+        <div class="signal"><i></i> Python 3.13+ · v0.1.4</div>
+        <h1>让类型<br><span>成为契约。</span></h1>
+        <p>用熟悉的参数声明定义远程 API。Typact 接管请求构建、传输、转换与测试。</p>
+        <div class="hero-actions"><a class="primary" href="/docs/getting-started/">阅读文档 <span>→</span></a><button class="install" data-copy="pip install typact"><code>pip install typact</code><span>复制</span></button></div>
+      </div>
+      <div class="contract" aria-label="从类型声明到响应模型的流程">
+        <div class="contract-head"><span>contract.py</span><i></i><i></i><i></i></div>
+        <pre><span class="purple">@client.get</span>(<span class="green">{'"/users/{user_id}"'}</span>)
+<span class="purple">async def</span> <span class="blue">get_user</span>(
+    user_id: <span class="gold">int</span> = <span class="blue">Path</span>(),
+) -> <span class="gold">User</span>:
+    <span class="purple">pass</span></pre>
+        <div class="runtime-flow"><span>DECLARE</span><b></b><span>BUILD</span><b></b><span>RUNTIME</span><b></b><span>TYPE</span></div>
+        <div class="pulse p1"></div><div class="pulse p2"></div>
+      </div>
+    </section>
+    <section class="manifesto">
+      <div class="section-label">01 / ONE CONTRACT</div>
+      <h2>写下接口的样子。<br>剩下的交给 Runtime。</h2>
+      <p>声明、传输与转换彼此解耦。你的业务函数只保留真正重要的部分：输入与输出。</p>
+    </section>
+    <section class="features">
+      <div><span>01</span><h3>声明即实现</h3><p>Path、Query、Header、Body、Form 与 File，保持 FastAPI 风格的直觉。</p></div>
+      <div><span>02</span><h3>类型贯穿全程</h3><p>Pydantic TypeAdapter 将响应可靠地转换为模型、列表或任意声明类型。</p></div>
+      <div><span>03</span><h3>传输自由切换</h3><p>标准库开箱即用，也可无缝接入 httpx、aiohttp 或自己的 Runtime。</p></div>
+    </section>
+    <section class="closing"><div class="section-label">READY WHEN YOU ARE</div><h2>更少胶水代码。<br>更清晰的边界。</h2><a href="/docs/getting-started/">五分钟开始使用 <span>↗</span></a></section>
+  </main>
+  <footer><Brand /><span>Typed HTTP contracts for Python.</span><span>MIT · 2026</span></footer>
+  <script>
+    const button = document.querySelector<HTMLButtonElement>('[data-copy]');
+    button?.addEventListener('click', async () => { await navigator.clipboard.writeText(button.dataset.copy || ''); const label=button.querySelector('span'); if(label){label.textContent='已复制';setTimeout(()=>label.textContent='复制',1200)} });
+    const observer = new IntersectionObserver(entries => entries.forEach(e => e.isIntersecting && e.target.classList.add('visible')), {threshold:.18});
+    document.querySelectorAll('.manifesto,.features>div,.closing').forEach(el => observer.observe(el));
+  </script>
+</body></html>
+
+<style>
+  .home { background:#090b12; color:#f0f2ff; }
+  .home-nav { position:absolute; width:100%; border-color:rgba(255,255,255,.09); background:transparent; }
+  .nav-cta { padding:.55rem .9rem; border:1px solid #393f54; border-radius:5px; color:#fff!important; }
+  .hero { min-height:100svh; position:relative; overflow:hidden; display:grid; grid-template-columns:minmax(0,1fr) minmax(420px,.82fr); align-items:center; gap:6vw; padding:110px 7vw 70px; }
+  .grid-glow { position:absolute; inset:0; pointer-events:none; background-image:linear-gradient(rgba(139,125,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(139,125,255,.07) 1px,transparent 1px); background-size:56px 56px; mask-image:radial-gradient(circle at 78% 45%,black,transparent 56%); }
+  .grid-glow::after { content:''; position:absolute; width:35vw; aspect-ratio:1; right:7vw; top:20%; border-radius:50%; background:#493fc7; filter:blur(140px); opacity:.18; }
+  .hero-copy,.contract { position:relative; z-index:2; }
+  .signal { display:flex; align-items:center; gap:.6rem; margin-bottom:2rem; color:#8991aa; font:500 .7rem var(--mono); letter-spacing:.08em; }
+  .signal i { width:7px; height:7px; border-radius:50%; background:#28d1dd; box-shadow:0 0 14px #28d1dd; }
+  .hero h1 { margin:0; font-size:clamp(4.2rem,8.6vw,8.5rem); line-height:.83; letter-spacing:-.08em; font-weight:800; }
+  .hero h1 span { color:#8b7dff; }
+  .hero-copy>p { max-width:590px; margin:2.3rem 0; color:#99a1b8; font-size:clamp(1rem,1.6vw,1.22rem); }
+  .hero-actions { display:flex; align-items:center; gap:1rem; flex-wrap:wrap; }
+  .primary { display:flex; justify-content:space-between; min-width:170px; padding:.85rem 1rem; border-radius:5px; color:#090b12; background:#28d1dd; font-size:.83rem; font-weight:750; text-decoration:none; transition:transform .2s,box-shadow .2s; }
+  .primary:hover { transform:translateY(-2px); box-shadow:0 12px 30px rgba(40,209,221,.18); }
+  .install { display:flex; gap:1.3rem; padding:.75rem .9rem; border:1px solid #2a3042; border-radius:5px; background:#10131e; color:#d6daea; cursor:pointer; }
+  .install code { font:500 .72rem var(--mono); }.install span{color:#717a93;font-size:.7rem}
+  .contract { justify-self:end; width:min(100%,580px); border:1px solid #292f42; border-radius:13px; background:rgba(13,16,26,.8); box-shadow:0 35px 100px rgba(0,0,0,.42); backdrop-filter:blur(16px); transform:perspective(1000px) rotateY(-4deg) rotateX(2deg); animation:arrive .9s cubic-bezier(.2,.8,.2,1) both; }
+  .contract-head { display:flex; align-items:center; gap:6px; padding:.75rem 1rem; border-bottom:1px solid #252b3c; color:#7f879d; font:400 .65rem var(--mono); }.contract-head span{margin-right:auto}.contract-head i{width:6px;height:6px;border-radius:50%;background:#353b4d}
+  .contract pre { margin:0; padding:2.1rem; color:#dbe0f3; font:500 clamp(.72rem,1.25vw,.95rem)/2 var(--mono); }.purple{color:#a99fff}.green{color:#77d9aa}.blue{color:#62c7ed}.gold{color:#e8c77b}
+  .runtime-flow { display:flex; align-items:center; padding:1rem 1.5rem; border-top:1px solid #252b3c; color:#667087; font:500 .55rem var(--mono); letter-spacing:.08em; }.runtime-flow b{height:1px;flex:1;margin:0 .65rem;background:linear-gradient(90deg,#5145bd,#28d1dd)}.runtime-flow span:last-child{color:#28d1dd}
+  .pulse { position:absolute; width:7px;height:7px;border-radius:50%;background:#28d1dd;box-shadow:0 0 18px #28d1dd;bottom:1.36rem;animation:travel 3.4s linear infinite}.p1{left:24%}.p2{left:55%;animation-delay:-1.7s}
+  .manifesto { min-height:82vh; display:flex; flex-direction:column; justify-content:center; padding:10vw 7vw; border-top:1px solid #202537; opacity:0; transform:translateY(35px); transition:.8s ease; }.visible{opacity:1!important;transform:none!important}
+  .section-label { color:#28d1dd; font:500 .66rem var(--mono); letter-spacing:.13em; }
+  .manifesto h2,.closing h2 { max-width:1000px; margin:2rem 0; font-size:clamp(3rem,7vw,7rem); line-height:.98; letter-spacing:-.065em; }.manifesto p{max-width:520px;margin-left:auto;color:#8d95ab;font-size:1.1rem}
+  .features { display:grid; grid-template-columns:repeat(3,1fr); border-top:1px solid #202537; border-bottom:1px solid #202537; }.features>div{min-height:390px;padding:4rem 3vw;border-right:1px solid #202537;opacity:0;transform:translateY(25px);transition:.7s ease}.features>div:last-child{border:0}.features span{color:#28d1dd;font:500 .65rem var(--mono)}.features h3{margin:8rem 0 1rem;font-size:1.55rem}.features p{max-width:330px;color:#858da5;font-size:.9rem}
+  .closing { padding:12vw 7vw; opacity:0; transform:translateY(35px); transition:.8s ease; }.closing a{display:inline-flex;gap:4rem;padding:.9rem 0;border-bottom:1px solid #28d1dd;color:#28d1dd;text-decoration:none;font-size:.9rem}
+  footer { display:flex; align-items:center; gap:2rem; padding:2rem 7vw; border-top:1px solid #202537; color:#6f778f; font-size:.72rem; }footer span:last-child{margin-left:auto}
+  @keyframes arrive{from{opacity:0;transform:perspective(1000px) translateX(55px) rotateY(-10deg)}to{opacity:1}}
+  @keyframes travel{from{transform:translateX(-40px)}to{transform:translateX(110px)}}
+  @media(max-width:850px){.hero{grid-template-columns:1fr;padding-top:120px}.contract{justify-self:start;transform:none}.features{grid-template-columns:1fr}.features>div{min-height:auto;border-right:0;border-bottom:1px solid #202537}.features h3{margin-top:4rem}.manifesto p{margin-left:0}.home-nav .top-actions a:not(.nav-cta){display:none}}
+</style>
