@@ -1,5 +1,6 @@
 ---
 import Brand from '../components/Brand.astro';
+import SourceLink from '../components/SourceLink.astro';
 import '../styles/global.css';
 
 const { frontmatter } = Astro.props;
@@ -24,6 +25,7 @@ const groups = [
       <Brand />
       <nav class="top-actions" aria-label="辅助导航">
         <a href="/docs/getting-started/">文档</a>
+        <SourceLink />
         <a href="https://pypi.org/project/typact/" target="_blank" rel="noreferrer">PyPI ↗</a>
         <button id="theme-toggle" aria-label="切换颜色主题">◐</button>
         <button id="menu-toggle" class="menu-toggle" aria-label="打开菜单">菜单</button>

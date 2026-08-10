@@ -1,5 +1,6 @@
 ---
 import Brand from '../components/Brand.astro';
+import SourceLink from '../components/SourceLink.astro';
 import '../styles/global.css';
 
 let packageVersion = '0.1.4';
@@ -18,7 +19,7 @@ try {
 <html lang="zh-CN" data-theme="dark">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"><meta name="description" content="Typact — 声明式、类型安全、可插拔 Runtime 的 Python HTTP Client"><link rel="icon" href="/favicon.svg"><title>Typact · Typed HTTP contracts for Python</title></head>
 <body class="home">
-  <header class="topbar home-nav"><Brand /><nav class="top-actions"><a href="/docs/getting-started/">文档</a><a href="https://pypi.org/project/typact/">PyPI ↗</a><a class="nav-cta" href="/docs/getting-started/">开始使用</a></nav></header>
+  <header class="topbar home-nav"><Brand /><nav class="top-actions"><a href="/docs/getting-started/">文档</a><SourceLink /><a href="https://pypi.org/project/typact/">PyPI ↗</a><a class="nav-cta" href="/docs/getting-started/">开始使用</a></nav></header>
   <main>
     <section class="hero">
       <div class="grid-glow"></div>
