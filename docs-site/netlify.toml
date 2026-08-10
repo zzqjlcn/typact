@@ -1,0 +1,3 @@
+[build]
+command = "npx astro build"
+publish = "dist"
