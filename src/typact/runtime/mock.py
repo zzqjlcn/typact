@@ -71,4 +71,5 @@ class MockRuntime(ClientRuntime):
             json=config.json,
             data=config.data,
             files=dict(config.files) if isinstance(config.files, dict) else config.files,
+            timeout=config.timeout,
         )

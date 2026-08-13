@@ -1,5 +1,6 @@
 import json
 from asyncio import to_thread
+from urllib.error import HTTPError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
@@ -40,7 +41,12 @@ class UrllibRuntime(ClientRuntime):
             method=config.method,
         )
 
-        with urlopen(req) as response:
+        try:
+            response = urlopen(req, timeout=config.timeout)
+        except HTTPError as error:
+            response = error
+
+        with response:
             content = response.read()
 
             json_data = None
@@ -52,7 +58,7 @@ class UrllibRuntime(ClientRuntime):
                     json_data = None
 
             return Response(
-                status_code=response.status,
+                status_code=response.status if hasattr(response, "status") else response.code,
                 headers=dict(response.headers),
                 content=content,
                 json_data=json_data,

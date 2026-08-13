@@ -31,6 +31,7 @@ class AioHttpRuntime(ClientRuntime):
             cookies=config.cookies,
             json=config.json,
             data=config.data,
+            timeout=config.timeout,
         ) as response:
             content = await response.read()
 

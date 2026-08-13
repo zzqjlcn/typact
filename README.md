@@ -228,6 +228,20 @@ from typact import HttpClient
 client = HttpClient("https://api.example.com")
 ```
 
+### 超时与重试
+
+默认不会自动重试。生产调用可在 Client 上启用超时和指数退避；默认只重试幂等方法的连接/超时错误，以及 429、502、503、504 响应：
+
+```python
+from typact import HttpClient, RetryConfig
+
+client = HttpClient(
+    "https://api.example.com",
+    timeout=10,
+    retry_config=RetryConfig(max_retries=3, initial_delay=0.5),
+)
+```
+
 所有 Runtime 都可以映射为统一的 `typact.Response`：
 
 ```python

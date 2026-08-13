@@ -2,6 +2,8 @@ from typact.annotations import Body, Cookie, File, FileData, Form, Header, Path,
 from typact.builder.request_builder import RequestBuilder
 from typact.client.http_client import HttpClient
 from typact.converter.response_converter import TypactHttpError, ResponseConverter
+from typact.core.errors import TypactNetworkError, TypactTimeoutError
+from typact.core.retry import RetryConfig
 from typact.core.types import RequestConfig, Response, SimpleResponse
 from typact.interceptor.auth import (
     ApiKeyInterceptor,
@@ -37,6 +39,9 @@ __all__ = [
     "RequestBuilder",
     "ResponseConverter",
     "TypactHttpError",
+    "TypactNetworkError",
+    "TypactTimeoutError",
+    "RetryConfig",
     "HttpClientError",
     "InterceptorChain",
     "BearerTokenInterceptor",

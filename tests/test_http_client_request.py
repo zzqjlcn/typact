@@ -3,7 +3,39 @@ import inspect
 import unittest
 from typing import Any
 
-from typact import File, FileData, Form, HttpClient, MockRuntime, Response
+from typact import (
+    File,
+    FileData,
+    Form,
+    HttpClient,
+    MockRuntime,
+    Response,
+    RetryConfig,
+    TypactHttpError,
+    TypactNetworkError,
+    TypactTimeoutError,
+)
+from typact.core.types import RequestConfig
+from typact.runtime.base import ClientRuntime
+
+
+class FlakyRuntime(ClientRuntime):
+    def __init__(self, failures: int):
+        self.failures = failures
+        self.requests: list[RequestConfig] = []
+
+    async def request(self, config: RequestConfig) -> Response:
+        self.requests.append(config)
+        if self.failures:
+            self.failures -= 1
+            raise ConnectionError("connection refused")
+        return Response(status_code=200, headers={}, content=b'{"ok": true}', json_data={"ok": True})
+
+
+class SlowRuntime(ClientRuntime):
+    async def request(self, config: RequestConfig) -> Response:
+        await asyncio.sleep(1)
+        return Response(status_code=200, headers={}, content=b"{}", json_data={})
 
 
 class LoginApi:
@@ -55,6 +87,18 @@ class DownloadApi:
         raise NotImplementedError
 
     async def download_response(self) -> Response:
+        raise NotImplementedError
+
+
+class RetryApi:
+    def __init__(self, client: HttpClient):
+        client.request("/health", method="GET")(self.health)
+        client.request("/events", method="POST")(self.create_event)
+
+    async def health(self) -> dict:
+        raise NotImplementedError
+
+    async def create_event(self) -> dict:
         raise NotImplementedError
 
 
@@ -162,6 +206,67 @@ class HttpClientRequestTest(unittest.TestCase):
         self.assertEqual(result.content, b'{"detail": "not found"}')
         self.assertEqual(result.text, '{"detail": "not found"}')
         self.assertEqual(result.json(), {"detail": "not found"})
+
+    def test_retries_retryable_status_for_idempotent_request(self):
+        runtime = MockRuntime()
+        runtime.add_responses(
+            "GET",
+            "https://example.test/health",
+            [
+                Response(status_code=503, headers={}, content=b"{}", json_data={}),
+                Response(status_code=200, headers={}, content=b'{"ok": true}', json_data={"ok": True}),
+            ],
+        )
+        api = RetryApi(
+            HttpClient(
+                "https://example.test",
+                client_runtime=runtime,
+                retry_config=RetryConfig(max_retries=1, initial_delay=0),
+            )
+        )
+
+        self.assertEqual(asyncio.run(api.health()), {"ok": True})
+        self.assertEqual(len(runtime.requests), 2)
+
+    def test_does_not_retry_post_by_default(self):
+        runtime = MockRuntime()
+        runtime.add_response("POST", "https://example.test/events", status_code=503)
+        api = RetryApi(
+            HttpClient(
+                "https://example.test",
+                client_runtime=runtime,
+                retry_config=RetryConfig(max_retries=1, initial_delay=0),
+            )
+        )
+
+        with self.assertRaises(TypactHttpError):
+            asyncio.run(api.create_event())
+        self.assertEqual(len(runtime.requests), 1)
+
+    def test_retries_network_error(self):
+        runtime = FlakyRuntime(failures=1)
+        api = RetryApi(
+            HttpClient(
+                "https://example.test",
+                client_runtime=runtime,
+                retry_config=RetryConfig(max_retries=1, initial_delay=0),
+            )
+        )
+
+        self.assertEqual(asyncio.run(api.health()), {"ok": True})
+        self.assertEqual(len(runtime.requests), 2)
+
+    def test_wraps_network_error_after_retries_are_exhausted(self):
+        api = RetryApi(HttpClient("https://example.test", client_runtime=FlakyRuntime(failures=1)))
+
+        with self.assertRaises(TypactNetworkError):
+            asyncio.run(api.health())
+
+    def test_raises_timeout_error(self):
+        api = RetryApi(HttpClient("https://example.test", client_runtime=SlowRuntime(), timeout=0.01))
+
+        with self.assertRaises(TypactTimeoutError):
+            asyncio.run(api.health())
 
 
 if __name__ == "__main__":

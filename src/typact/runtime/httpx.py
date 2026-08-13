@@ -23,6 +23,7 @@ class HttpxRuntime(ClientRuntime):
             json=config.json,
             data=config.data,
             files=config.files,
+            timeout=config.timeout,
         )
 
         json_data = None

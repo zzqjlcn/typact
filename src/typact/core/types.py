@@ -12,6 +12,7 @@ class RequestConfig:
     json: Any = None
     data: Any = None
     files: Any = None
+    timeout: float | None = None
 
 
 @dataclass
