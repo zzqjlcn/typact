@@ -2,6 +2,7 @@ from typact.annotations import Body, Cookie, File, FileData, Form, Header, Path,
 from typact.builder.request_builder import RequestBuilder
 from typact.client.http_client import HttpClient
 from typact.converter.response_converter import TypactHttpError, ResponseConverter
+from typact.converter.sse_converter import SseResponseConverter
 from typact.core.errors import TypactNetworkError, TypactTimeoutError
 from typact.core.retry import RetryConfig
 from typact.core.types import RequestConfig, Response, SimpleResponse
@@ -38,6 +39,7 @@ __all__ = [
     "MockRuntime",
     "RequestBuilder",
     "ResponseConverter",
+    "SseResponseConverter",
     "TypactHttpError",
     "TypactNetworkError",
     "TypactTimeoutError",

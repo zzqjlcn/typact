@@ -1,8 +1,9 @@
 import asyncio
 import inspect
 import threading
+from collections.abc import AsyncIterator
 from functools import wraps
-from typing import Any, Callable, get_type_hints
+from typing import Any, AsyncGenerator, Callable, get_origin, get_type_hints
 
 from typact.client.metadata import RouteDefinition
 
@@ -41,6 +42,17 @@ def create_route_decorator(client: Any, method: str, path: str):
             return_type=get_type_hints(func).get("return", Any),
             is_async=inspect.iscoroutinefunction(func),
         )
+
+        is_stream = get_origin(route.return_type) in {AsyncIterator, AsyncGenerator}
+
+        if is_stream:
+
+            @wraps(func)
+            async def stream_wrapper(*args, **kwargs):
+                async for item in client.execute_stream(route, args, kwargs):
+                    yield item
+
+            return stream_wrapper
 
         if route.is_async:
 

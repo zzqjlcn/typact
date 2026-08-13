@@ -1,5 +1,6 @@
 import asyncio
 import inspect
+from collections.abc import AsyncIterator
 from collections.abc import Callable, Sequence
 from typing import Any, ParamSpec, TypeVar, overload
 
@@ -7,6 +8,7 @@ from typact.builder.request_builder import RequestBuilder
 from typact.client.decorator import create_route_decorator
 from typact.client.metadata import RouteDefinition
 from typact.converter.response_converter import ResponseConverter
+from typact.converter.sse_converter import SseResponseConverter
 from typact.core.errors import TypactNetworkError, TypactTimeoutError
 from typact.core.retry import RetryConfig
 from typact.core.types import RequestConfig, Response
@@ -38,6 +40,7 @@ class HttpClient:
             default_headers=headers,
         )
         self.response_converter = response_converter or ResponseConverter()
+        self.sse_converter = SseResponseConverter()
         self.interceptor_chain = interceptor_chain or InterceptorChain()
         if timeout is not None and timeout <= 0:
             raise ValueError("timeout must be greater than 0")
@@ -136,6 +139,20 @@ class HttpClient:
 
     async def close(self):
         await self.runtime.close()
+
+    async def execute_stream(
+        self,
+        route: RouteDefinition,
+        args: tuple[Any, ...],
+        kwargs: dict[str, Any],
+    ) -> AsyncIterator[Any]:
+        config = self.request_builder.build(route, args, kwargs)
+        config.timeout = self.timeout
+        config = await self.interceptor_chain.apply_request(config)
+        item_type = route.return_type.__args__[0]
+
+        async for item in self.sse_converter.convert(self.runtime.stream(config), item_type):
+            yield item
 
     async def _request_with_retry(self, config: RequestConfig) -> Response:
         retry_number = 0

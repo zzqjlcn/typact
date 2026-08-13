@@ -1,5 +1,6 @@
 from typing import Any
 
+from typact.core.errors import TypactHttpError
 from typact.core.types import RequestConfig, Response
 from typact.runtime.base import ClientRuntime
 
@@ -53,3 +54,24 @@ class AioHttpRuntime(ClientRuntime):
     async def close(self) -> None:
         if self._own_session and self.session is not None:
             await self.session.close()
+
+    def stream(self, config: RequestConfig):
+        async def iterator():
+            session = await self._get_session()
+            async with session.request(
+                method=config.method,
+                url=config.url,
+                params=config.params,
+                headers=config.headers,
+                cookies=config.cookies,
+                json=config.json,
+                data=config.data,
+                timeout=config.timeout,
+            ) as response:
+                if response.status >= 400:
+                    raise TypactHttpError(response.status, await response.read())
+
+                async for chunk in response.content.iter_any():
+                    yield chunk
+
+        return iterator()

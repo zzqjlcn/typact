@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
 
 from typact.core.types import RequestConfig, Response
 
@@ -10,3 +11,6 @@ class ClientRuntime(ABC):
 
     async def close(self) -> None:
         pass
+
+    def stream(self, config: RequestConfig) -> AsyncIterator[bytes]:
+        raise NotImplementedError("This runtime does not support streaming responses")

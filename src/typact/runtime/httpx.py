@@ -1,5 +1,6 @@
 from typing import Any
 
+from typact.core.errors import TypactHttpError
 from typact.core.types import RequestConfig, Response
 from typact.runtime.base import ClientRuntime
 
@@ -43,3 +44,24 @@ class HttpxRuntime(ClientRuntime):
 
     async def close(self) -> None:
         await self.client.aclose()
+
+    def stream(self, config: RequestConfig):
+        async def iterator():
+            async with self.client.stream(
+                method=config.method,
+                url=config.url,
+                params=config.params,
+                headers=config.headers,
+                cookies=config.cookies,
+                json=config.json,
+                data=config.data,
+                files=config.files,
+                timeout=config.timeout,
+            ) as response:
+                if response.status_code >= 400:
+                    raise TypactHttpError(response.status_code, await response.aread())
+
+                async for chunk in response.aiter_bytes():
+                    yield chunk
+
+        return iterator()

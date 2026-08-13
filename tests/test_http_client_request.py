@@ -1,6 +1,7 @@
 import asyncio
 import inspect
 import unittest
+from collections.abc import AsyncIterator
 from typing import Any
 
 from typact import (
@@ -99,6 +100,14 @@ class RetryApi:
         raise NotImplementedError
 
     async def create_event(self) -> dict:
+        raise NotImplementedError
+
+
+class SseApi:
+    def __init__(self, client: HttpClient):
+        client.request("/events", method="GET")(self.events)
+
+    async def events(self) -> AsyncIterator[dict[str, int]]:
         raise NotImplementedError
 
 
@@ -267,6 +276,25 @@ class HttpClientRequestTest(unittest.TestCase):
 
         with self.assertRaises(TypactTimeoutError):
             asyncio.run(api.health())
+
+    def test_reads_sse_events_and_converts_items(self):
+        runtime = MockRuntime()
+        runtime.add_sse_response(
+            "GET",
+            "https://example.test/events",
+            [
+                "id: 1\nevent: update\ndata: {\"value\": 1}\n\n",
+                b"data: {\"value\":\n",
+                b"data: 2}\n\n",
+            ],
+        )
+        api = SseApi(HttpClient("https://example.test", client_runtime=runtime))
+
+        async def collect():
+            return [event async for event in api.events()]
+
+        self.assertEqual(asyncio.run(collect()), [{"value": 1}, {"value": 2}])
+        self.assertEqual(len(runtime.requests), 1)
 
 
 if __name__ == "__main__":

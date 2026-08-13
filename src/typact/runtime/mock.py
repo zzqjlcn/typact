@@ -8,6 +8,7 @@ class MockRuntime(ClientRuntime):
     def __init__(self):
         self.routes: dict[tuple[str, str], Response] = {}
         self.response_queues: dict[tuple[str, str], list[Response]] = {}
+        self.sse_routes: dict[tuple[str, str], list[bytes]] = {}
         self.requests: list[RequestConfig] = []
 
     def add_response(
@@ -42,6 +43,17 @@ class MockRuntime(ClientRuntime):
     ):
         self.response_queues[(method.upper(), url)] = responses
 
+    def add_sse_response(
+        self,
+        method: str,
+        url: str,
+        events: list[str | bytes],
+    ):
+        self.sse_routes[(method.upper(), url)] = [
+            event.encode("utf-8") if isinstance(event, str) else event
+            for event in events
+        ]
+
     async def request(self, config: RequestConfig) -> Response:
         self.requests.append(self._snapshot_config(config))
 
@@ -59,6 +71,23 @@ class MockRuntime(ClientRuntime):
             )
 
         return self.routes[key]
+
+    def stream(self, config: RequestConfig):
+        self.requests.append(self._snapshot_config(config))
+        events = self.sse_routes.get((config.method.upper(), config.url))
+
+        if events is None:
+            async def missing_stream():
+                raise RuntimeError("mock SSE response not found")
+                yield b""
+
+            return missing_stream()
+
+        async def iterator():
+            for event in events:
+                yield event
+
+        return iterator()
 
     @staticmethod
     def _snapshot_config(config: RequestConfig) -> RequestConfig:

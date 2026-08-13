@@ -444,6 +444,31 @@ content = await download_file()
 
 空文件会返回 `b""`。
 
+## SSE
+
+将返回类型声明为 `AsyncIterator[T]`，即可按 SSE 的 `data:` 事件持续接收并转换数据：
+
+```python
+from collections.abc import AsyncIterator
+
+from typact import HttpClient
+
+
+client = HttpClient("https://api.example.com")
+
+
+@client.get("/events")
+async def events() -> AsyncIterator[dict]:
+    pass
+
+
+async for event in events():
+    print(event)
+```
+
+SSE 需要 `HttpxRuntime` 或 `AioHttpRuntime`；`MockRuntime` 支持通过
+`add_sse_response()` 提供测试事件。
+
 ## 项目结构
 
 ```text
