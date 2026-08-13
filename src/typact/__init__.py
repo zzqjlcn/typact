@@ -3,6 +3,7 @@ from typact.builder.request_builder import RequestBuilder
 from typact.client.http_client import HttpClient
 from typact.converter.response_converter import TypactHttpError, ResponseConverter
 from typact.converter.sse_converter import SseResponseConverter
+from typact.converter.stream_converter import StreamResponseConverter
 from typact.core.errors import TypactNetworkError, TypactTimeoutError
 from typact.core.retry import RetryConfig
 from typact.core.types import RequestConfig, Response, SimpleResponse
@@ -40,6 +41,7 @@ __all__ = [
     "RequestBuilder",
     "ResponseConverter",
     "SseResponseConverter",
+    "StreamResponseConverter",
     "TypactHttpError",
     "TypactNetworkError",
     "TypactTimeoutError",

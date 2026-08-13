@@ -469,6 +469,24 @@ async for event in events():
 SSE 需要 `HttpxRuntime` 或 `AioHttpRuntime`；`MockRuntime` 支持通过
 `add_sse_response()` 提供测试事件。
 
+## 普通流式响应
+
+接口返回 `AsyncIterator[bytes]` 会原样返回网络分片，适合大文件下载或转发；
+声明为 `AsyncIterator[str]` 时会执行 UTF-8 增量解码：
+
+```python
+from collections.abc import AsyncIterator
+
+
+@client.get("/files/report.zip")
+async def download_report() -> AsyncIterator[bytes]:
+    pass
+
+
+async for chunk in download_report():
+    await write_chunk(chunk)
+```
+
 ## 项目结构
 
 ```text

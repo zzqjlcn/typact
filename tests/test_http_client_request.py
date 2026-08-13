@@ -111,6 +111,18 @@ class SseApi:
         raise NotImplementedError
 
 
+class StreamApi:
+    def __init__(self, client: HttpClient):
+        client.request("/download-stream", method="GET")(self.download)
+        client.request("/text-stream", method="GET")(self.text)
+
+    async def download(self) -> AsyncIterator[bytes]:
+        raise NotImplementedError
+
+    async def text(self) -> AsyncIterator[str]:
+        raise NotImplementedError
+
+
 class HttpClientRequestTest(unittest.TestCase):
     def test_registers_bound_method_and_preserves_signature(self):
         runtime = MockRuntime()
@@ -295,6 +307,34 @@ class HttpClientRequestTest(unittest.TestCase):
 
         self.assertEqual(asyncio.run(collect()), [{"value": 1}, {"value": 2}])
         self.assertEqual(len(runtime.requests), 1)
+
+    def test_reads_streamed_byte_chunks_without_buffering(self):
+        runtime = MockRuntime()
+        runtime.add_stream_response(
+            "GET",
+            "https://example.test/download-stream",
+            [b"first", b"-second"],
+        )
+        api = StreamApi(HttpClient("https://example.test", client_runtime=runtime))
+
+        async def collect():
+            return [chunk async for chunk in api.download()]
+
+        self.assertEqual(asyncio.run(collect()), [b"first", b"-second"])
+
+    def test_decodes_split_utf8_text_stream(self):
+        runtime = MockRuntime()
+        runtime.add_stream_response(
+            "GET",
+            "https://example.test/text-stream",
+            ["你".encode("utf-8")[:2], "你".encode("utf-8")[2:] + "好".encode("utf-8")],
+        )
+        api = StreamApi(HttpClient("https://example.test", client_runtime=runtime))
+
+        async def collect():
+            return "".join([chunk async for chunk in api.text()])
+
+        self.assertEqual(asyncio.run(collect()), "你好")
 
 
 if __name__ == "__main__":

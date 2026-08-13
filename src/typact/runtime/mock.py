@@ -54,6 +54,14 @@ class MockRuntime(ClientRuntime):
             for event in events
         ]
 
+    def add_stream_response(
+        self,
+        method: str,
+        url: str,
+        chunks: list[bytes],
+    ):
+        self.sse_routes[(method.upper(), url)] = chunks
+
     async def request(self, config: RequestConfig) -> Response:
         self.requests.append(self._snapshot_config(config))
 
