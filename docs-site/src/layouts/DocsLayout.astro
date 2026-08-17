@@ -33,7 +33,7 @@ const groups = [
     </header>
     <div class="docs-shell">
       <aside class="sidebar" id="sidebar">
-        <div class="version">文档 <span>v0.1.4</span></div>
+        <div class="version">文档 <span>v0.2.0</span></div>
         {groups.map(group => <section>
           <h2>{group.title}</h2>
           {group.links.map(([label, href]) => <a class:list={{ active: current === href }} href={href}>{label}</a>)}

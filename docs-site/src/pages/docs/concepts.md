@@ -19,6 +19,8 @@ Typact 把 Python 函数签名视为一份可执行的 HTTP 契约。
 | Runtime | 真正发送请求，不参与业务建模 |
 | Converter | 根据返回类型转换响应数据 |
 
+`AsyncIterator[bytes]` 和 `AsyncIterator[str]` 会保留流式分片语义；其他 `AsyncIterator[T]` 则表示 SSE 事件流，并使用声明类型转换每条 `data:` 数据。
+
 ## 函数签名就是契约
 
 ```python

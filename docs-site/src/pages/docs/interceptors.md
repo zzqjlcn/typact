@@ -18,11 +18,13 @@ description: 用拦截器扩展认证、日志和链路追踪。
 ## 配置认证
 
 ```python
-from typact import AuthInterceptor, HttpClient
+from typact import BearerTokenInterceptor, HttpClient, InterceptorChain
 
 client = HttpClient(
     "https://api.example.com",
-    interceptors=[AuthInterceptor(token="your-token")],
+    interceptor_chain=InterceptorChain(
+        request_interceptors=[BearerTokenInterceptor("your-token")],
+    ),
 )
 ```
 

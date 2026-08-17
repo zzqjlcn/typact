@@ -17,7 +17,12 @@ Mock Runtime 让测试聚焦在“声明是否生成了正确请求”，无需�
 ```python
 from typact import HttpClient, MockRuntime, Query
 
-runtime = MockRuntime(response={"items": []})
+runtime = MockRuntime()
+runtime.add_response(
+    "GET",
+    "https://api.example.com/items",
+    json_data={"items": []},
+)
 client = HttpClient("https://api.example.com", client_runtime=runtime)
 
 @client.get("/items")
@@ -26,8 +31,28 @@ async def list_items(page: int = Query(1)) -> dict:
 
 result = await list_items(page=2)
 assert result == {"items": []}
-assert runtime.last_request.params == {"page": 2}
+assert runtime.requests[0].params == {"page": 2}
 ```
+
+## 流与 SSE
+
+Mock Runtime 也能为流式路由提供确定性的分片数据：
+
+```python
+runtime.add_stream_response(
+    "GET",
+    "https://api.example.com/download",
+    [b"first", b"-second"],
+)
+
+runtime.add_sse_response(
+    "GET",
+    "https://api.example.com/events",
+    ['data: {"value": 1}\n\n'],
+)
+```
+
+普通流使用 `add_stream_response()`；SSE 使用 `add_sse_response()`。测试时应断言转换后的事件或分片，而不依赖真实网络时序。
 
 ## 测试边界
 

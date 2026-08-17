@@ -58,3 +58,19 @@ await client.close()
 ```
 
 下一步，了解 [参数注解](/docs/annotations/) 或 Typact 的 [核心概念](/docs/concepts/)。
+
+## 生产调用配置
+
+需要设置超时或重试时，在创建 Client 时统一配置：
+
+```python
+from typact import HttpClient, RetryConfig
+
+client = HttpClient(
+    "https://api.example.com",
+    timeout=10,
+    retry_config=RetryConfig(max_retries=3),
+)
+```
+
+默认不重试；默认策略只会重试幂等请求，避免重复提交写操作。
