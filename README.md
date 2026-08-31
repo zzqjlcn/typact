@@ -1,6 +1,11 @@
-# Typact
+# <img src="https://typact.zzq.jl.cn/favicon.svg" alt="Typact" width="28" height="28" style="vertical-align: middle;"/> Typact
 
-Typact 是一个面向 Python 的声明式、类型安全、可插拔 Runtime 的 HTTP 服务调用框架。
+[![Documentation](https://img.shields.io/badge/docs-typact.zzq.jl.cn-blue)](https://typact.zzq.jl.cn)
+[![PyPI](https://img.shields.io/pypi/v/typact)](https://pypi.org/project/typact/)
+[![Python](https://img.shields.io/pypi/pyversions/typact)](https://pypi.org/project/typact/)
+[![License](https://img.shields.io/pypi/l/typact)](LICENSE)
+
+**Typact** 是一个面向 Python 的声明式、类型安全、可插拔 Runtime 的 HTTP 服务调用框架。
 
 它让你用类似 FastAPI 参数声明的方式定义远程 HTTP API，同时把请求构建、运行时传输、响应转换、认证、日志、Mock 测试拆成清晰的模块。
 
@@ -28,35 +33,44 @@ user = await get_user(1)
 
 ## 特性
 
-- 声明式 HTTP Client：用装饰器描述远程 API，而不是手写请求代码。
-- 类型安全响应转换：基于 Pydantic v2 `TypeAdapter` 将响应数据转换为模型、列表或任意类型。
-- FastAPI 风格参数注解：支持 `Path`、`Query`、`Header`、`Cookie`、`Body`、`Form`、`File`。
-- 多 Runtime：默认使用标准库 `urllib`，也可按需安装 `httpx` 或 `aiohttp`。
-- 拦截器链：支持请求前和响应后的扩展点，可用于认证、日志、Trace 等。
-- Mock Runtime：无需启动服务即可测试声明式 client 的请求构建结果。
-- 文件上传：支持通过 `File(...)` 构建 `multipart/form-data` 所需的 `files` 参数。
+- **声明式 HTTP Client**：用装饰器描述远程 API，而不是手写请求代码。
+- **类型安全响应转换**：基于 Pydantic v2 `TypeAdapter` 将响应数据转换为模型、列表或任意类型。
+- **FastAPI 风格参数注解**：支持 `Path`、`Query`、`Header`、`Cookie`、`Body`、`Form`、`File`。
+- **多 Runtime**：默认使用标准库 `urllib`，也可按需安装 `httpx` 或 `aiohttp`。
+- **拦截器链**：支持请求前和响应后的扩展点，可用于认证、日志、Trace 等。
+- **Token 自动刷新**：支持 Token Provider 与 401 自动刷新重试。
+- **超时与重试**：支持 Client / API 级别超时配置与指数退避重试。
+- **Mock Runtime**：无需启动服务即可测试声明式 Client 的请求构建结果。
+- **文件上传 / 下载**：支持 `multipart/form-data`、原始字节下载和流式下载。
+- **SSE / Stream**：支持 `AsyncIterator[T]` 声明 SSE 和普通流式响应。
 
 ## 安装
 
-核心安装只依赖 `pydantic`，默认 Runtime 使用 Python 标准库 `urllib`。
+Typact 要求：
+
+```text
+Python >= 3.13
+```
+
+核心安装只依赖 `pydantic`，默认 Runtime 使用 Python 标准库 `urllib`：
 
 ```bash
 pip install typact
 ```
 
-如果需要 `httpx` Runtime：
+使用 `httpx` Runtime：
 
 ```bash
 pip install "typact[httpx]"
 ```
 
-如果需要 `aiohttp` Runtime：
+使用 `aiohttp` Runtime：
 
 ```bash
 pip install "typact[aiohttp]"
 ```
 
-本仓库本地开发：
+本地开发：
 
 ```bash
 uv sync
@@ -112,7 +126,11 @@ async def main():
     print(todos[0])
 
     created = await create_todo(
-        Todo(user_id=1, title="hello typact", completed=False)
+        Todo(
+            user_id=1,
+            title="hello typact",
+            completed=False,
+        )
     )
     print(created)
 
@@ -129,9 +147,13 @@ if __name__ == "__main__":
 - `examples/auth_demo.py`
 - `examples/file_upload_demo.py`
 
+完整使用文档请访问：
+
+👉 **[Typact 官方文档](https://typact.zzq.jl.cn)**
+
 ## 参数注解
 
-Typact 当前提供以下声明式参数：
+Typact 提供以下声明式参数：
 
 ```python
 from typact import Body, Cookie, File, Form, Header, Path, Query
@@ -149,7 +171,10 @@ async def get_user(user_id: int = Path()) -> dict:
 
 ```python
 @client.get("/users")
-async def list_users(page: int = Query(1), keyword: str | None = Query(None)) -> list[dict]:
+async def list_users(
+    page: int = Query(1),
+    keyword: str | None = Query(None),
+) -> list[dict]:
     pass
 ```
 
@@ -157,7 +182,9 @@ async def list_users(page: int = Query(1), keyword: str | None = Query(None)) ->
 
 ```python
 @client.get("/profile")
-async def get_profile(request_id: str = Header(alias="X-Request-Id")) -> dict:
+async def get_profile(
+    request_id: str = Header(alias="X-Request-Id"),
+) -> dict:
     pass
 ```
 
@@ -202,11 +229,9 @@ await upload_avatar(
 )
 ```
 
-`File(...)` 只声明文件字段的名称、默认值和是否必填；`FileData(...)`
-描述本次上传的内容、文件名和媒体类型。构建请求时，它们会被转换为 Runtime
-可直接消费的 `RequestConfig.files`。
+`File(...)` 负责声明文件字段名称、默认值和是否必填；`FileData(...)` 描述本次上传的内容、文件名和媒体类型。
 
-只需要上传字节内容时，也可以直接使用 `bytes` 参数：
+只需要上传字节内容时，也可以直接使用：
 
 ```python
 @client.post("/upload/raw")
@@ -219,7 +244,9 @@ await upload_raw(b"hello typact")
 
 ## Runtime
 
-Typact 的核心不会绑定某个 HTTP 库。`HttpClient` 默认使用 `UrllibRuntime`，不需要安装额外依赖。
+Typact 的核心不会绑定某个 HTTP 库。
+
+默认使用 `UrllibRuntime`，无需安装额外 HTTP Client 依赖：
 
 ```python
 from typact import HttpClient
@@ -228,66 +255,7 @@ from typact import HttpClient
 client = HttpClient("https://api.example.com")
 ```
 
-### 超时与重试
-
-默认不会自动重试。生产调用可在 Client 上启用超时和指数退避；默认只重试幂等方法的连接/超时错误，以及 429、502、503、504 响应：
-
-```python
-from typact import HttpClient, RetryConfig
-
-client = HttpClient(
-    "https://api.example.com",
-    timeout=10,
-    retry_config=RetryConfig(max_retries=3, initial_delay=0.5),
-)
-```
-
-单个接口可覆盖 Client 默认策略；显式传入 `None` 可关闭该默认值：
-
-```python
-from collections.abc import AsyncIterator
-
-from typact import Path
-
-@client.get(
-    "/reports/{report_id}",
-    timeout=60,
-    retry_config=RetryConfig(max_retries=2),
-)
-async def get_report(report_id: int = Path()) -> dict:
-    pass
-
-
-@client.get("/events", timeout=None)
-async def events() -> AsyncIterator[dict]:
-    pass
-```
-
-流式连接只会在尚未产出任何分片前重试，避免重复交付 SSE 事件或下载数据。
-
-所有 Runtime 都可以映射为统一的 `typact.Response`：
-
-```python
-from typact import Response
-
-
-@client.get("/health")
-async def health() -> Response:
-    pass
-
-
-response = await health()
-print(response.status_code)
-print(response.headers)
-print(response.content)
-print(response.text)
-print(response.json())
-```
-
-返回类型声明为 `Response` 时，Typact 不会为 4xx/5xx 自动抛出
-`TypactHttpError`，由调用方根据 `response.status_code` 处理。
-
-使用 `httpx`：
+### Httpx
 
 ```python
 import httpx
@@ -297,11 +265,13 @@ from typact import HttpClient, HttpxRuntime
 
 client = HttpClient(
     "https://api.example.com",
-    client_runtime=HttpxRuntime(httpx.AsyncClient(timeout=30)),
+    client_runtime=HttpxRuntime(
+        httpx.AsyncClient(timeout=30)
+    ),
 )
 ```
 
-使用 `aiohttp`：
+### Aiohttp
 
 ```python
 from typact import AioHttpRuntime, HttpClient
@@ -313,30 +283,97 @@ client = HttpClient(
 )
 ```
 
-使用 Mock：
+### Mock
 
 ```python
 from typact import HttpClient, MockRuntime, Path
 
 
 runtime = MockRuntime()
+
 runtime.add_response(
     "GET",
     "http://test.local/users/1",
-    json_data={"id": 1, "name": "typact"},
+    json_data={
+        "id": 1,
+        "name": "typact",
+    },
 )
 
-client = HttpClient("http://test.local", client_runtime=runtime)
+client = HttpClient(
+    "http://test.local",
+    client_runtime=runtime,
+)
 
 
 @client.get("/users/{user_id}")
-async def get_user(user_id: int = Path()) -> dict:
+async def get_user(
+    user_id: int = Path(),
+) -> dict:
     pass
 ```
 
+## 超时与重试
+
+默认不会自动重试。
+
+生产环境可以在 Client 上配置超时和指数退避：
+
+```python
+from typact import HttpClient, RetryConfig
+
+
+client = HttpClient(
+    "https://api.example.com",
+    timeout=10,
+    retry_config=RetryConfig(
+        max_retries=3,
+        initial_delay=0.5,
+    ),
+)
+```
+
+单个 API 也可以覆盖 Client 默认配置：
+
+```python
+@client.get(
+    "/reports/{report_id}",
+    timeout=60,
+    retry_config=RetryConfig(max_retries=2),
+)
+async def get_report(
+    report_id: int = Path(),
+) -> dict:
+    pass
+```
+
+## Response
+
+所有 Runtime 都会映射成统一的 `typact.Response`：
+
+```python
+from typact import Response
+
+
+@client.get("/health")
+async def health() -> Response:
+    pass
+
+
+response = await health()
+
+print(response.status_code)
+print(response.headers)
+print(response.content)
+print(response.text)
+print(response.json())
+```
+
+返回类型声明为 `Response` 时，Typact 不会为 `4xx / 5xx` 自动抛出 `TypactHttpError`，调用方可以自行根据 `status_code` 处理。
+
 ## 拦截器
 
-拦截器可以在请求发送前或响应转换前处理数据。
+拦截器可以在请求发送前或响应转换前处理数据：
 
 ```python
 from typact import (
@@ -368,9 +405,7 @@ client = HttpClient(
 
 ## Token 刷新
 
-如果 token 会过期，可以使用 `CallableTokenProvider` 和 `RefreshableBearerTokenInterceptor`。
-
-当请求返回 401 时，Typact 会调用 `refresh_token()` 刷新 token，并用新 token 自动重试一次。
+对于会过期的 Token，可以使用 `CallableTokenProvider` 和 `RefreshableBearerTokenInterceptor`：
 
 ```python
 from typact import (
@@ -382,7 +417,6 @@ from typact import (
 
 
 async def login() -> str:
-    # 在这里调用 /auth/login，并返回新的 token
     return "new-token"
 
 
@@ -395,25 +429,29 @@ client = HttpClient(
     "https://api.example.com",
     interceptor_chain=InterceptorChain(
         request_interceptors=[
-            RefreshableBearerTokenInterceptor(token_provider),
+            RefreshableBearerTokenInterceptor(
+                token_provider
+            ),
         ],
     ),
 )
 ```
 
-默认请求头是：
+当请求返回 `401` 时，Typact 会调用 `refresh_token()` 获取新 Token，并自动重试一次。
+
+默认请求头：
 
 ```text
 Authorization: Bearer <token>
 ```
 
-如果你的接口和一些内部系统一样，要求直接传 token：
+如果接口要求：
 
 ```text
 Authorization: <token>
 ```
 
-可以设置 `scheme=None`：
+可以使用：
 
 ```python
 RefreshableBearerTokenInterceptor(
@@ -447,14 +485,9 @@ await upload_file(
 )
 ```
 
-文件名和媒体类型属于每次调用的数据，因此由 `FileData` 携带，而不是固定在
-接口声明中。`content` 支持 `bytes` 和二进制文件对象；如果不需要指定文件名或
-媒体类型，可以让接口接收 `bytes = File()` 并直接传入字节内容。
-
 ## 文件下载
 
-将接口返回类型声明为 `bytes`，Typact 会直接返回原始响应体，不经过 JSON
-解析或 Pydantic 转换：
+将返回类型声明为 `bytes`：
 
 ```python
 @client.get("/files/report.pdf")
@@ -465,11 +498,11 @@ async def download_file() -> bytes:
 content = await download_file()
 ```
 
-空文件会返回 `b""`。
+Typact 会直接返回原始响应体，不经过 JSON 解析或 Pydantic 转换。
 
 ## SSE
 
-将返回类型声明为 `AsyncIterator[T]`，即可按 SSE 的 `data:` 事件持续接收并转换数据：
+将返回类型声明为 `AsyncIterator[T]`：
 
 ```python
 from collections.abc import AsyncIterator
@@ -489,13 +522,11 @@ async for event in events():
     print(event)
 ```
 
-SSE 需要 `HttpxRuntime` 或 `AioHttpRuntime`；`MockRuntime` 支持通过
-`add_sse_response()` 提供测试事件。
+SSE 需要 `HttpxRuntime` 或 `AioHttpRuntime`。
 
 ## 普通流式响应
 
-接口返回 `AsyncIterator[bytes]` 会原样返回网络分片，适合大文件下载或转发；
-声明为 `AsyncIterator[str]` 时会执行 UTF-8 增量解码：
+返回 `AsyncIterator[bytes]` 时会直接返回网络分片：
 
 ```python
 from collections.abc import AsyncIterator
@@ -509,6 +540,8 @@ async def download_report() -> AsyncIterator[bytes]:
 async for chunk in download_report():
     await write_chunk(chunk)
 ```
+
+声明为 `AsyncIterator[str]` 时，会执行 UTF-8 增量解码。
 
 ## 项目结构
 
@@ -526,24 +559,29 @@ src/typact/
 
 ## 设计理念
 
-Typact 的核心流水线是：
+Typact 的核心流水线：
 
 ```text
 Decorator
-  -> RouteDefinition
-  -> RequestBuilder
-  -> InterceptorChain
-  -> ClientRuntime
-  -> ResponseConverter
+    ↓
+RouteDefinition
+    ↓
+RequestBuilder
+    ↓
+InterceptorChain
+    ↓
+ClientRuntime
+    ↓
+ResponseConverter
 ```
 
-每层只做一件事：
+每层只负责一件事：
 
-- Decorator 收集函数签名和返回类型。
-- RequestBuilder 将调用参数转换成 `RequestConfig`。
-- InterceptorChain 负责横切逻辑。
-- Runtime 只负责发送请求并返回统一的 `Response`。
-- ResponseConverter 只负责把响应转换成目标类型。
+- **Decorator**：收集函数签名和返回类型。
+- **RequestBuilder**：将调用参数转换成 `RequestConfig`。
+- **InterceptorChain**：处理认证、日志、Trace 等横切逻辑。
+- **ClientRuntime**：负责实际 HTTP 请求。
+- **ResponseConverter**：将响应转换成声明的目标类型。
 
 ## 开发
 
@@ -575,6 +613,16 @@ uv run python -m compileall src examples
 - OpenAPI 生成器
 - SSE / Stream 响应转换
 - Record / Replay 测试工具
+
+## 文档
+
+完整文档、API 使用说明及更多示例：
+
+🌐 **[https://typact.zzq.jl.cn](https://typact.zzq.jl.cn)**
+
+PyPI：
+
+📦 **[https://pypi.org/project/typact/](https://pypi.org/project/typact/)**
 
 ## License
 

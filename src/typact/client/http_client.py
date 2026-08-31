@@ -11,6 +11,7 @@ from typact.converter.response_converter import ResponseConverter
 from typact.converter.sse_converter import SseResponseConverter
 from typact.converter.stream_converter import StreamResponseConverter
 from typact.core.errors import TypactHttpError, TypactNetworkError, TypactTimeoutError
+from typact.core.events import RequestEvent, RequestEventHandler, RequestEventPhase
 from typact.core.retry import RetryConfig
 from typact.core.types import RequestConfig, Response
 from typact.interceptor.base import InterceptorChain
@@ -33,6 +34,7 @@ class HttpClient:
         interceptor_chain: InterceptorChain | None = None,
         timeout: float | None = None,
         retry_config: RetryConfig | None = None,
+        event_handlers: Sequence[RequestEventHandler] | None = None,
     ):
         self.base_url = base_url
         self.runtime = client_runtime or UrllibRuntime()
@@ -48,6 +50,10 @@ class HttpClient:
             raise ValueError("timeout must be greater than 0")
         self.timeout = timeout
         self.retry_config = retry_config or RetryConfig()
+        self.event_handlers = list(event_handlers or ())
+
+    def add_event_handler(self, handler: RequestEventHandler) -> None:
+        self.event_handlers.append(handler)
 
     def get(
         self,
@@ -191,25 +197,42 @@ class HttpClient:
     ):
         config = self._build_request_config(route, args, kwargs)
         config = await self.interceptor_chain.apply_request(config)
+        await self._emit_event("request", config, attempt=1)
 
-        retry_config = self._get_retry_config(route)
-        response = await self._request_with_retry(config, retry_config)
+        try:
+            retry_config = self._get_retry_config(route)
+            response, attempt = await self._request_with_retry(config, retry_config)
 
-        if response.status_code == 401:
-            refreshed_config = await self.interceptor_chain.refresh_unauthorized(
-                config=config,
+            if response.status_code == 401:
+                refreshed_config = await self.interceptor_chain.refresh_unauthorized(
+                    config=config,
+                    response=response,
+                )
+
+                if refreshed_config is not None:
+                    config = refreshed_config
+                    await self._emit_event(
+                        "retry",
+                        config,
+                        attempt=attempt + 1,
+                        response=response,
+                    )
+                    response, refresh_attempt = await self._request_with_retry(
+                        config,
+                        retry_config,
+                    )
+                    attempt += refresh_attempt
+
+            response = await self.interceptor_chain.apply_response(response)
+            await self._emit_event("response", config, attempt=attempt, response=response)
+
+            return self.response_converter.convert(
                 response=response,
+                return_type=route.return_type,
             )
-
-            if refreshed_config is not None:
-                response = await self._request_with_retry(refreshed_config, retry_config)
-
-        response = await self.interceptor_chain.apply_response(response)
-
-        return self.response_converter.convert(
-            response=response,
-            return_type=route.return_type,
-        )
+        except Exception as exc:
+            await self._emit_event("failure", config, attempt=1, error=exc)
+            raise
 
     async def close(self):
         await self.runtime.close()
@@ -222,6 +245,7 @@ class HttpClient:
     ) -> AsyncIterator[Any]:
         config = self._build_request_config(route, args, kwargs)
         config = await self.interceptor_chain.apply_request(config)
+        await self._emit_event("request", config, attempt=1)
         item_type = route.return_type.__args__[0]
         retry_config = self._get_retry_config(route)
 
@@ -231,11 +255,15 @@ class HttpClient:
             else self.sse_converter
         )
 
-        async for item in converter.convert(
-            self._stream_with_retry(config, retry_config),
-            item_type,
-        ):
-            yield item
+        try:
+            async for item in converter.convert(
+                self._stream_with_retry(config, retry_config),
+                item_type,
+            ):
+                yield item
+        except Exception as exc:
+            await self._emit_event("failure", config, attempt=1, error=exc)
+            raise
 
     def _build_request_config(
         self,
@@ -256,13 +284,17 @@ class HttpClient:
         self,
         config: RequestConfig,
         retry_config: RetryConfig,
-    ) -> Response:
+    ) -> tuple[Response, int]:
         retry_number = 0
 
         while True:
+            response: Response | None = None
+            error: Exception | None = None
+
             try:
                 response = await self._request_once(config)
             except Exception as exc:
+                error = exc
                 if not self._is_network_error(exc):
                     raise
 
@@ -277,8 +309,15 @@ class HttpClient:
                     response.status_code not in retry_config.retry_status_codes
                     or not self._can_retry(config, retry_number, retry_config)
                 ):
-                    return response
+                    return response, retry_number + 1
 
+            await self._emit_event(
+                "retry",
+                config,
+                attempt=retry_number + 2,
+                response=response,
+                error=error,
+            )
             await asyncio.sleep(retry_config.delay_for_retry(retry_number))
             retry_number += 1
 
@@ -301,13 +340,29 @@ class HttpClient:
 
         while True:
             received_chunk = False
+            emitted_response = False
+            error: Exception | None = None
 
             try:
                 async for chunk in self.runtime.stream(config):
                     received_chunk = True
+                    if not emitted_response:
+                        await self._emit_event(
+                            "response",
+                            config,
+                            attempt=retry_number + 1,
+                        )
+                        emitted_response = True
                     yield chunk
+                if not emitted_response:
+                    await self._emit_event(
+                        "response",
+                        config,
+                        attempt=retry_number + 1,
+                    )
                 return
             except Exception as exc:
+                error = exc
                 can_retry = (
                     not received_chunk
                     and self._can_retry(config, retry_number, retry_config)
@@ -316,8 +371,35 @@ class HttpClient:
                 if not can_retry:
                     raise
 
+            await self._emit_event(
+                "retry",
+                config,
+                attempt=retry_number + 2,
+                error=error,
+            )
             await asyncio.sleep(retry_config.delay_for_retry(retry_number))
             retry_number += 1
+
+    async def _emit_event(
+        self,
+        phase: RequestEventPhase,
+        config: RequestConfig,
+        *,
+        attempt: int,
+        response: Response | None = None,
+        error: Exception | None = None,
+    ) -> None:
+        event = RequestEvent(
+            phase=phase,
+            config=config,
+            attempt=attempt,
+            response=response,
+            error=error,
+        )
+        for handler in self.event_handlers:
+            result = handler(event)
+            if inspect.isawaitable(result):
+                await result
 
     def _can_retry(
         self,

@@ -12,6 +12,7 @@ from typact import (
     MockRuntime,
     Response,
     RetryConfig,
+    RequestEvent,
     TypactHttpError,
     TypactNetworkError,
     TypactTimeoutError,
@@ -165,6 +166,50 @@ class RoutePolicyApi:
 
 
 class HttpClientRequestTest(unittest.TestCase):
+    def test_emits_request_retry_and_response_events(self):
+        runtime = MockRuntime()
+        runtime.add_responses(
+            "GET",
+            "https://example.test/health",
+            [
+                Response(status_code=503, headers={}, content=b"{}", json_data={}),
+                Response(status_code=200, headers={}, content=b'{"ok": true}', json_data={"ok": True}),
+            ],
+        )
+        events: list[RequestEvent] = []
+        api = RetryApi(
+            HttpClient(
+                "https://example.test",
+                client_runtime=runtime,
+                retry_config=RetryConfig(max_retries=1, initial_delay=0),
+                event_handlers=[events.append],
+            )
+        )
+
+        self.assertEqual(asyncio.run(api.health()), {"ok": True})
+        self.assertEqual([event.phase for event in events], ["request", "retry", "response"])
+        self.assertEqual([event.attempt for event in events], [1, 2, 2])
+        self.assertEqual(events[1].response.status_code, 503)
+        self.assertEqual(events[2].response.status_code, 200)
+
+    def test_emits_failure_event_after_an_http_error(self):
+        runtime = MockRuntime()
+        runtime.add_response("GET", "https://example.test/health", status_code=500)
+        events: list[RequestEvent] = []
+        api = RetryApi(
+            HttpClient(
+                "https://example.test",
+                client_runtime=runtime,
+                event_handlers=[events.append],
+            )
+        )
+
+        with self.assertRaises(TypactHttpError):
+            asyncio.run(api.health())
+
+        self.assertEqual([event.phase for event in events], ["request", "response", "failure"])
+        self.assertIsInstance(events[-1].error, TypactHttpError)
+
     def test_registers_bound_method_and_preserves_signature(self):
         runtime = MockRuntime()
         runtime.add_response(
@@ -426,6 +471,28 @@ class HttpClientRequestTest(unittest.TestCase):
 
         self.assertEqual(asyncio.run(collect()), [b"ready"])
         self.assertEqual(runtime.stream_attempts, 2)
+
+    def test_stream_emits_events_with_an_async_handler(self):
+        runtime = FlakyStreamRuntime()
+        events: list[RequestEvent] = []
+
+        async def record(event: RequestEvent):
+            events.append(event)
+
+        api = RoutePolicyApi(
+            HttpClient(
+                "https://example.test",
+                client_runtime=runtime,
+                event_handlers=[record],
+            )
+        )
+
+        async def collect():
+            return [chunk async for chunk in api.retry_stream()]
+
+        self.assertEqual(asyncio.run(collect()), [b"ready"])
+        self.assertEqual([event.phase for event in events], ["request", "retry", "response"])
+        self.assertEqual([event.attempt for event in events], [1, 2, 2])
 
 
 if __name__ == "__main__":

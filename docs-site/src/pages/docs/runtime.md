@@ -90,3 +90,18 @@ async for chunk in download_report():
 
 将返回类型声明为 `AsyncIterator[str]` 时，Typact 会进行 UTF-8 增量解码；声明为其他 `AsyncIterator[T]` 时，会按 SSE 的 `data:` 事件解析并转换为 `T`。
 流式连接只会在首个分片产出前重试，避免重复交付已消费的数据。
+
+## 请求事件
+
+`HttpClient` 可通过 `event_handlers` 观察请求生命周期，事件阶段为 `request`、`retry`、`response` 和 `failure`。处理函数可以是同步或异步函数，适合接入日志、指标与链路追踪。
+
+```python
+from typact import HttpClient, RequestEvent
+
+async def observe(event: RequestEvent):
+    print(event.phase, event.config.method, event.config.url, event.attempt)
+
+client = HttpClient("https://api.example.com", event_handlers=[observe])
+```
+
+也可以在创建后追加处理器：`client.add_event_handler(handler)`。`response` 事件会提供普通请求的 `Response`；流式请求在连接建立成功时触发，响应字段为 `None`。`failure` 会提供最终异常。
