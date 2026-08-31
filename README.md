@@ -242,6 +242,29 @@ client = HttpClient(
 )
 ```
 
+单个接口可覆盖 Client 默认策略；显式传入 `None` 可关闭该默认值：
+
+```python
+from collections.abc import AsyncIterator
+
+from typact import Path
+
+@client.get(
+    "/reports/{report_id}",
+    timeout=60,
+    retry_config=RetryConfig(max_retries=2),
+)
+async def get_report(report_id: int = Path()) -> dict:
+    pass
+
+
+@client.get("/events", timeout=None)
+async def events() -> AsyncIterator[dict]:
+    pass
+```
+
+流式连接只会在尚未产出任何分片前重试，避免重复交付 SSE 事件或下载数据。
+
 所有 Runtime 都可以映射为统一的 `typact.Response`：
 
 ```python

@@ -57,6 +57,22 @@ client = HttpClient(
 
 网络连接失败会抛出 `TypactNetworkError`，超时会抛出 `TypactTimeoutError`。
 
+单个接口可以覆盖 Client 默认策略；`None` 表示关闭继承的默认值：
+
+```python
+from collections.abc import AsyncIterator
+
+from typact import Path, RetryConfig
+
+@client.get("/reports/{report_id}", timeout=60, retry_config=RetryConfig(max_retries=2))
+async def get_report(report_id: int = Path()) -> dict:
+    pass
+
+@client.get("/events", timeout=None)
+async def events() -> AsyncIterator[dict]:
+    pass
+```
+
 ## 流式响应
 
 `HttpxRuntime` 和 `AioHttpRuntime` 支持普通流与 SSE；默认的 `UrllibRuntime` 仅支持一次性响应。
@@ -73,3 +89,4 @@ async for chunk in download_report():
 ```
 
 将返回类型声明为 `AsyncIterator[str]` 时，Typact 会进行 UTF-8 增量解码；声明为其他 `AsyncIterator[T]` 时，会按 SSE 的 `data:` 事件解析并转换为 `T`。
+流式连接只会在首个分片产出前重试，避免重复交付已消费的数据。

@@ -39,6 +39,23 @@ class SlowRuntime(ClientRuntime):
         return Response(status_code=200, headers={}, content=b"{}", json_data={})
 
 
+class FlakyStreamRuntime(ClientRuntime):
+    def __init__(self):
+        self.stream_attempts = 0
+
+    async def request(self, config: RequestConfig) -> Response:
+        raise NotImplementedError
+
+    def stream(self, config: RequestConfig):
+        async def iterator():
+            self.stream_attempts += 1
+            if self.stream_attempts == 1:
+                raise TypactHttpError(503, b"temporarily unavailable")
+            yield b"ready"
+
+        return iterator()
+
+
 class LoginApi:
     def __init__(self, runtime: MockRuntime):
         self.client = HttpClient("https://example.test", client_runtime=runtime)
@@ -120,6 +137,30 @@ class StreamApi:
         raise NotImplementedError
 
     async def text(self) -> AsyncIterator[str]:
+        raise NotImplementedError
+
+
+class RoutePolicyApi:
+    def __init__(self, client: HttpClient):
+        client.request("/short", method="GET", timeout=3)(self.short)
+        client.request("/long-stream", method="GET", timeout=None)(self.long_stream)
+        client.request("/no-retry", method="GET", retry_config=None)(self.no_retry)
+        client.request(
+            "/retry-stream",
+            method="GET",
+            retry_config=RetryConfig(max_retries=1, initial_delay=0),
+        )(self.retry_stream)
+
+    async def short(self) -> dict:
+        raise NotImplementedError
+
+    async def long_stream(self) -> AsyncIterator[bytes]:
+        raise NotImplementedError
+
+    async def no_retry(self) -> dict:
+        raise NotImplementedError
+
+    async def retry_stream(self) -> AsyncIterator[bytes]:
         raise NotImplementedError
 
 
@@ -335,6 +376,56 @@ class HttpClientRequestTest(unittest.TestCase):
             return "".join([chunk async for chunk in api.text()])
 
         self.assertEqual(asyncio.run(collect()), "你好")
+
+    def test_route_timeout_overrides_client_default(self):
+        runtime = MockRuntime()
+        runtime.add_response("GET", "https://example.test/short", json_data={"ok": True})
+        api = RoutePolicyApi(HttpClient("https://example.test", client_runtime=runtime, timeout=30))
+
+        self.assertEqual(asyncio.run(api.short()), {"ok": True})
+        self.assertEqual(runtime.requests[0].timeout, 3)
+
+    def test_rejects_non_positive_route_timeout(self):
+        client = HttpClient("https://example.test")
+
+        with self.assertRaises(ValueError):
+            client.get("/short", timeout=0)
+
+    def test_route_timeout_can_disable_client_default_for_streams(self):
+        runtime = MockRuntime()
+        runtime.add_stream_response("GET", "https://example.test/long-stream", [b"first"])
+        api = RoutePolicyApi(HttpClient("https://example.test", client_runtime=runtime, timeout=30))
+
+        async def collect():
+            return [chunk async for chunk in api.long_stream()]
+
+        self.assertEqual(asyncio.run(collect()), [b"first"])
+        self.assertIsNone(runtime.requests[0].timeout)
+
+    def test_route_retry_config_can_disable_client_default(self):
+        runtime = MockRuntime()
+        runtime.add_response("GET", "https://example.test/no-retry", status_code=503)
+        api = RoutePolicyApi(
+            HttpClient(
+                "https://example.test",
+                client_runtime=runtime,
+                retry_config=RetryConfig(max_retries=1, initial_delay=0),
+            )
+        )
+
+        with self.assertRaises(TypactHttpError):
+            asyncio.run(api.no_retry())
+        self.assertEqual(len(runtime.requests), 1)
+
+    def test_stream_retries_before_delivering_a_chunk(self):
+        runtime = FlakyStreamRuntime()
+        api = RoutePolicyApi(HttpClient("https://example.test", client_runtime=runtime))
+
+        async def collect():
+            return [chunk async for chunk in api.retry_stream()]
+
+        self.assertEqual(asyncio.run(collect()), [b"ready"])
+        self.assertEqual(runtime.stream_attempts, 2)
 
 
 if __name__ == "__main__":

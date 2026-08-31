@@ -5,7 +5,8 @@ from collections.abc import AsyncIterator
 from functools import wraps
 from typing import Any, AsyncGenerator, Callable, get_origin, get_type_hints
 
-from typact.client.metadata import RouteDefinition
+from typact.client.metadata import UNSET, RouteDefinition
+from typact.core.retry import RetryConfig
 
 
 def run_async_from_sync(coro_factory: Callable[[], Any]):
@@ -33,7 +34,17 @@ def run_async_from_sync(coro_factory: Callable[[], Any]):
     return result[0]
 
 
-def create_route_decorator(client: Any, method: str, path: str):
+def create_route_decorator(
+    client: Any,
+    method: str,
+    path: str,
+    *,
+    timeout: float | None | object = UNSET,
+    retry_config: RetryConfig | None | object = UNSET,
+):
+    if timeout is not UNSET and timeout is not None and timeout <= 0:
+        raise ValueError("timeout must be greater than 0")
+
     def decorator(func: Callable):
         route = RouteDefinition(
             method=method,
@@ -41,6 +52,8 @@ def create_route_decorator(client: Any, method: str, path: str):
             signature=inspect.signature(func),
             return_type=get_type_hints(func).get("return", Any),
             is_async=inspect.iscoroutinefunction(func),
+            timeout=timeout,
+            retry_config=retry_config,
         )
 
         is_stream = get_origin(route.return_type) in {AsyncIterator, AsyncGenerator}

@@ -6,11 +6,11 @@ from typing import Any, ParamSpec, TypeVar, overload
 
 from typact.builder.request_builder import RequestBuilder
 from typact.client.decorator import create_route_decorator
-from typact.client.metadata import RouteDefinition
+from typact.client.metadata import UNSET, RouteDefinition
 from typact.converter.response_converter import ResponseConverter
 from typact.converter.sse_converter import SseResponseConverter
 from typact.converter.stream_converter import StreamResponseConverter
-from typact.core.errors import TypactNetworkError, TypactTimeoutError
+from typact.core.errors import TypactHttpError, TypactNetworkError, TypactTimeoutError
 from typact.core.retry import RetryConfig
 from typact.core.types import RequestConfig, Response
 from typact.interceptor.base import InterceptorChain
@@ -49,20 +49,80 @@ class HttpClient:
         self.timeout = timeout
         self.retry_config = retry_config or RetryConfig()
 
-    def get(self, path: str):
-        return create_route_decorator(self, "GET", path)
+    def get(
+        self,
+        path: str,
+        *,
+        timeout: float | None | object = UNSET,
+        retry_config: RetryConfig | None | object = UNSET,
+    ):
+        return create_route_decorator(
+            self,
+            "GET",
+            path,
+            timeout=timeout,
+            retry_config=retry_config,
+        )
 
-    def post(self, path: str):
-        return create_route_decorator(self, "POST", path)
+    def post(
+        self,
+        path: str,
+        *,
+        timeout: float | None | object = UNSET,
+        retry_config: RetryConfig | None | object = UNSET,
+    ):
+        return create_route_decorator(
+            self,
+            "POST",
+            path,
+            timeout=timeout,
+            retry_config=retry_config,
+        )
 
-    def put(self, path: str):
-        return create_route_decorator(self, "PUT", path)
+    def put(
+        self,
+        path: str,
+        *,
+        timeout: float | None | object = UNSET,
+        retry_config: RetryConfig | None | object = UNSET,
+    ):
+        return create_route_decorator(
+            self,
+            "PUT",
+            path,
+            timeout=timeout,
+            retry_config=retry_config,
+        )
 
-    def patch(self, path: str):
-        return create_route_decorator(self, "PATCH", path)
+    def patch(
+        self,
+        path: str,
+        *,
+        timeout: float | None | object = UNSET,
+        retry_config: RetryConfig | None | object = UNSET,
+    ):
+        return create_route_decorator(
+            self,
+            "PATCH",
+            path,
+            timeout=timeout,
+            retry_config=retry_config,
+        )
 
-    def delete(self, path: str):
-        return create_route_decorator(self, "DELETE", path)
+    def delete(
+        self,
+        path: str,
+        *,
+        timeout: float | None | object = UNSET,
+        retry_config: RetryConfig | None | object = UNSET,
+    ):
+        return create_route_decorator(
+            self,
+            "DELETE",
+            path,
+            timeout=timeout,
+            retry_config=retry_config,
+        )
 
     @overload
     def request(
@@ -70,6 +130,8 @@ class HttpClient:
         path: str,
         *,
         method: str,
+        timeout: float | None | object = UNSET,
+        retry_config: RetryConfig | None | object = UNSET,
     ) -> Callable[[Callable[P, R]], Callable[P, R]]: ...
 
     @overload
@@ -79,6 +141,8 @@ class HttpClient:
         func: Callable[P, R],
         *,
         methods: Sequence[str],
+        timeout: float | None | object = UNSET,
+        retry_config: RetryConfig | None | object = UNSET,
     ) -> Callable[P, R]: ...
 
     def request(
@@ -88,6 +152,8 @@ class HttpClient:
         *,
         method: str | None = None,
         methods: Sequence[str] | None = None,
+        timeout: float | None | object = UNSET,
+        retry_config: RetryConfig | None | object = UNSET,
     ):
         if method is not None and methods is not None:
             raise TypeError("method and methods cannot be used together")
@@ -96,7 +162,13 @@ class HttpClient:
         if len(route_methods) != 1:
             raise ValueError("request requires exactly one HTTP method")
 
-        decorator = create_route_decorator(self, route_methods[0], path)
+        decorator = create_route_decorator(
+            self,
+            route_methods[0],
+            path,
+            timeout=timeout,
+            retry_config=retry_config,
+        )
 
         def register(route_func: Callable[P, R]) -> Callable[P, R]:
             wrapper = decorator(route_func)
@@ -117,20 +189,20 @@ class HttpClient:
         args: tuple[Any, ...],
         kwargs: dict[str, Any],
     ):
-        config = self.request_builder.build(route, args, kwargs)
-        config.timeout = self.timeout
+        config = self._build_request_config(route, args, kwargs)
         config = await self.interceptor_chain.apply_request(config)
 
-        response = await self._request_with_retry(config)
+        retry_config = self._get_retry_config(route)
+        response = await self._request_with_retry(config, retry_config)
 
         if response.status_code == 401:
-            retry_config = await self.interceptor_chain.refresh_unauthorized(
+            refreshed_config = await self.interceptor_chain.refresh_unauthorized(
                 config=config,
                 response=response,
             )
 
-            if retry_config is not None:
-                response = await self._request_with_retry(retry_config)
+            if refreshed_config is not None:
+                response = await self._request_with_retry(refreshed_config, retry_config)
 
         response = await self.interceptor_chain.apply_response(response)
 
@@ -148,10 +220,10 @@ class HttpClient:
         args: tuple[Any, ...],
         kwargs: dict[str, Any],
     ) -> AsyncIterator[Any]:
-        config = self.request_builder.build(route, args, kwargs)
-        config.timeout = self.timeout
+        config = self._build_request_config(route, args, kwargs)
         config = await self.interceptor_chain.apply_request(config)
         item_type = route.return_type.__args__[0]
+        retry_config = self._get_retry_config(route)
 
         converter = (
             self.stream_converter
@@ -159,10 +231,32 @@ class HttpClient:
             else self.sse_converter
         )
 
-        async for item in converter.convert(self.runtime.stream(config), item_type):
+        async for item in converter.convert(
+            self._stream_with_retry(config, retry_config),
+            item_type,
+        ):
             yield item
 
-    async def _request_with_retry(self, config: RequestConfig) -> Response:
+    def _build_request_config(
+        self,
+        route: RouteDefinition,
+        args: tuple[Any, ...],
+        kwargs: dict[str, Any],
+    ) -> RequestConfig:
+        config = self.request_builder.build(route, args, kwargs)
+        config.timeout = self.timeout if route.timeout is UNSET else route.timeout
+        return config
+
+    def _get_retry_config(self, route: RouteDefinition) -> RetryConfig:
+        if route.retry_config is UNSET:
+            return self.retry_config
+        return route.retry_config or RetryConfig()
+
+    async def _request_with_retry(
+        self,
+        config: RequestConfig,
+        retry_config: RetryConfig,
+    ) -> Response:
         retry_number = 0
 
         while True:
@@ -172,7 +266,7 @@ class HttpClient:
                 if not self._is_network_error(exc):
                     raise
 
-                if not self._can_retry(config, retry_number):
+                if not self._can_retry(config, retry_number, retry_config):
                     if isinstance(exc, TypactTimeoutError):
                         raise exc
                     if isinstance(exc, TimeoutError):
@@ -180,12 +274,12 @@ class HttpClient:
                     raise TypactNetworkError("Typact request failed due to a network error", cause=exc) from exc
             else:
                 if (
-                    response.status_code not in self.retry_config.retry_status_codes
-                    or not self._can_retry(config, retry_number)
+                    response.status_code not in retry_config.retry_status_codes
+                    or not self._can_retry(config, retry_number, retry_config)
                 ):
                     return response
 
-            await asyncio.sleep(self.retry_config.delay_for_retry(retry_number))
+            await asyncio.sleep(retry_config.delay_for_retry(retry_number))
             retry_number += 1
 
     async def _request_once(self, config: RequestConfig) -> Response:
@@ -198,11 +292,48 @@ class HttpClient:
         except TimeoutError as exc:
             raise TypactTimeoutError(config.timeout) from exc
 
-    def _can_retry(self, config: RequestConfig, retry_number: int) -> bool:
+    async def _stream_with_retry(
+        self,
+        config: RequestConfig,
+        retry_config: RetryConfig,
+    ) -> AsyncIterator[bytes]:
+        retry_number = 0
+
+        while True:
+            received_chunk = False
+
+            try:
+                async for chunk in self.runtime.stream(config):
+                    received_chunk = True
+                    yield chunk
+                return
+            except Exception as exc:
+                can_retry = (
+                    not received_chunk
+                    and self._can_retry(config, retry_number, retry_config)
+                    and self._is_retryable_stream_error(exc, retry_config)
+                )
+                if not can_retry:
+                    raise
+
+            await asyncio.sleep(retry_config.delay_for_retry(retry_number))
+            retry_number += 1
+
+    def _can_retry(
+        self,
+        config: RequestConfig,
+        retry_number: int,
+        retry_config: RetryConfig,
+    ) -> bool:
         return (
-            retry_number < self.retry_config.max_retries
-            and self.retry_config.allows_method(config.method)
+            retry_number < retry_config.max_retries
+            and retry_config.allows_method(config.method)
         )
+
+    def _is_retryable_stream_error(self, exc: Exception, retry_config: RetryConfig) -> bool:
+        if isinstance(exc, TypactHttpError):
+            return exc.status_code in retry_config.retry_status_codes
+        return self._is_network_error(exc)
 
     @staticmethod
     def _is_network_error(exc: Exception) -> bool:
