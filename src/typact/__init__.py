@@ -6,7 +6,7 @@ from typact.converter.sse_converter import SseResponseConverter
 from typact.converter.stream_converter import StreamResponseConverter
 from typact.core.errors import TypactNetworkError, TypactTimeoutError
 from typact.core.events import RequestEvent, RequestEventHandler, RequestEventPhase
-from typact.core.retry import RetryConfig
+from typact.core.retry import RetryConfig, default_should_retry_response
 from typact.core.types import RequestConfig, Response, SimpleResponse
 from typact.interceptor.auth import (
     ApiKeyInterceptor,
@@ -50,6 +50,7 @@ __all__ = [
     "RequestEventHandler",
     "RequestEventPhase",
     "RetryConfig",
+    "default_should_retry_response",
     "HttpClientError",
     "InterceptorChain",
     "BearerTokenInterceptor",

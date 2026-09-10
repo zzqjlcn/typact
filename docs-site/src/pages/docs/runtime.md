@@ -73,6 +73,59 @@ async def events() -> AsyncIterator[dict]:
     pass
 ```
 
+## 根据响应内容重试
+
+普通请求可通过同步回调 `should_retry_response: Callable[[Response], bool]` 判断是否重试。参数始终是统一的 `typact.Response`，可读取 `status_code`、`headers`、`content`、`text` 和 `json()`，不是接口声明的返回模型或底层 HTTP 库的响应对象。
+
+```python
+from typact import HttpClient, Response, RetryConfig, default_should_retry_response
+
+
+def retry_response(response: Response) -> bool:
+    if default_should_retry_response(response):
+        return True
+    data = response.json()
+    return (
+        response.status_code == 200
+        and isinstance(data, dict)
+        and data.get("code") in {"SYSTEM_BUSY", "RATE_LIMITED"}
+    )
+
+
+client = HttpClient(
+    "https://api.example.com",
+    retry_config=RetryConfig(
+        max_retries=3,
+        should_retry_response=retry_response,
+    ),
+)
+```
+
+配置规则：
+
+- 不提供回调时，`retry_status_codes` 继续控制状态码重试，默认值为 `{429, 502, 503, 504}`，旧配置无需修改。
+- 提供回调时，完全由它决定普通响应是否需要重试。默认状态码不会额外生效；需要时显式调用 `default_should_retry_response`。
+- 同时提供非 `None` 的 `retry_status_codes` 和回调会抛出 `ValueError`，包括空集合和默认集合。`retry_status_codes=None` 表示未指定；无回调时会解析为默认集合，有回调时保持 `None`。
+- `max_retries`、`allowed_methods` 和退避配置始终生效。默认 `max_retries=0` 不开启重试；默认方法集合不含 POST，确认接口允许重复请求后才应将它加入。
+- 回调返回 `False` 只结束响应重试判断，不关闭网络异常重试。禁用全部重试使用 `max_retries=0` 或路由级 `retry_config=None`。
+- 回调仅在方法允许且尚有重试次数时调用；必须同步返回 `bool`。异步函数和非布尔返回值不受支持，回调抛出的异常直接传播并触发 `failure`，不会作为网络错误重试。
+- 判断发生在响应拦截器、`response` 事件和返回类型转换之前。触发重试时，`retry` 事件携带本次响应。
+- 重试耗尽后，最后一次响应进入原有处理流程。HTTP 200 的业务错误不会自动转换为新的业务异常。
+- 原有 401 认证刷新发生在响应重试循环结束后。若回调对 401 返回 `True`，会先用完该循环的重试机会，再进入认证刷新；通常应让 401 返回 `False`。认证刷新后的请求同样使用该策略。
+
+流式请求与 SSE 目前不提供完整的 `Response`，不支持这个回调；使用回调配置调用它们会在网络请求前抛出 `ValueError`，不会静默忽略策略。混合使用普通和流式接口时，为流式路由指定状态码策略或关闭重试：
+
+```python
+from collections.abc import AsyncIterator
+
+
+@client.get("/events", retry_config=RetryConfig(max_retries=2))
+async def events() -> AsyncIterator[dict]:
+    pass
+```
+
+流式状态码和网络异常重试仍只发生在第一个数据块交付之前。
+
 ## 流式响应
 
 `HttpxRuntime` 和 `AioHttpRuntime` 支持普通流与 SSE；默认的 `UrllibRuntime` 仅支持一次性响应。

@@ -306,8 +306,8 @@ class HttpClient:
                     raise TypactNetworkError("Typact request failed due to a network error", cause=exc) from exc
             else:
                 if (
-                    response.status_code not in retry_config.retry_status_codes
-                    or not self._can_retry(config, retry_number, retry_config)
+                    not self._can_retry(config, retry_number, retry_config)
+                    or not retry_config.matches_response(response)
                 ):
                     return response, retry_number + 1
 
@@ -336,6 +336,11 @@ class HttpClient:
         config: RequestConfig,
         retry_config: RetryConfig,
     ) -> AsyncIterator[bytes]:
+        if retry_config.should_retry_response is not None:
+            raise ValueError(
+                "should_retry_response is not supported for streaming requests; "
+                "set a route-level retry_config using retry_status_codes or None"
+            )
         retry_number = 0
 
         while True:
@@ -414,7 +419,7 @@ class HttpClient:
 
     def _is_retryable_stream_error(self, exc: Exception, retry_config: RetryConfig) -> bool:
         if isinstance(exc, TypactHttpError):
-            return exc.status_code in retry_config.retry_status_codes
+            return exc.status_code in (retry_config.retry_status_codes or ())
         return self._is_network_error(exc)
 
     @staticmethod

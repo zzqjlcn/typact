@@ -2,7 +2,7 @@ import asyncio
 import unittest
 from collections.abc import AsyncIterator
 
-from typact import HttpClient, TypactHttpError
+from typact import HttpClient, Response, RetryConfig, TypactHttpError
 
 
 class IntegrationApi:
@@ -26,6 +26,32 @@ class IntegrationApi:
 
 
 class RuntimeIntegrationTest(unittest.IsolatedAsyncioTestCase):
+    async def test_response_predicate_across_all_runtimes(self):
+        from typact import AioHttpRuntime, HttpxRuntime, UrllibRuntime
+
+        for runtime in (UrllibRuntime(), HttpxRuntime(), AioHttpRuntime()):
+            with self.subTest(runtime=type(runtime).__name__):
+                responses = []
+
+                def predicate(response):
+                    responses.append(response)
+                    return True
+
+                async with HttpClient(
+                    self.base_url, client_runtime=runtime,
+                    retry_config=RetryConfig(
+                        max_retries=1, initial_delay=0, should_retry_response=predicate,
+                    ),
+                ) as client:
+                    events = []
+                    client.add_event_handler(events.append)
+                    self.assertEqual(await IntegrationApi(client).health(), {"ok": True})
+                self.assertEqual(len(responses), 1)
+                self.assertIsInstance(responses[0], Response)
+                self.assertEqual(responses[0].json(), {"ok": True})
+                self.assertEqual(responses[0].status_code, 200)
+                self.assertEqual([event.phase for event in events], ["request", "retry", "response"])
+
     async def asyncSetUp(self):
         self.server = await asyncio.start_server(self._handle_connection, "127.0.0.1", 0)
         port = self.server.sockets[0].getsockname()[1]
