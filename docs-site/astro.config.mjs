@@ -1,7 +1,7 @@
 import { defineConfig } from 'astro/config';
 
 export default defineConfig({
-  site: 'https://typact-docs.chatgpt-sites.com',
+  site: 'https://typact.zzq.jl.cn',
   output: 'static',
   markdown: {
     shikiConfig: { theme: 'github-dark-default' },

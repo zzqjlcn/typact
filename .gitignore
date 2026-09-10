@@ -10,4 +10,17 @@ wheels/
 .venv
 
 uv.lock
-.*
+.publish-dist/
+.release-audit/
+.env
+.env.*
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.agents/
+.codex/
+.openai/
+.idea/
+.vscode/

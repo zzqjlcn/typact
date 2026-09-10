@@ -1,0 +1,7 @@
+include README.md LICENSE CHANGELOG.md CONTRIBUTING.md RELEASING.md
+recursive-include src/typact *.py py.typed
+recursive-include tests *.py
+prune docs-site
+prune .release-audit
+prune .publish-dist
+global-exclude __pycache__ *.py[cod]

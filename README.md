@@ -5,6 +5,8 @@
 [![Python](https://img.shields.io/pypi/pyversions/typact)](https://pypi.org/project/typact/)
 [![License](https://img.shields.io/pypi/l/typact)](LICENSE)
 
+源码托管：[AtomGit](https://atomgit.com/zhangzhanqi/typact) · [GitHub](https://github.com/zzqjlcn/typact)。可前往仓库浏览源码、获取代码和查看提交记录。
+
 **Typact** 是一个面向 Python 的声明式、类型安全、可插拔 Runtime 的 HTTP 服务调用框架。
 
 它让你用类似 FastAPI 参数声明的方式定义远程 HTTP API，同时把请求构建、运行时传输、响应转换、认证、日志、Mock 测试拆成清晰的模块。
@@ -641,7 +643,7 @@ ResponseConverter
 安装依赖：
 
 ```bash
-uv sync
+uv sync --all-extras --group dev
 ```
 
 运行示例：
@@ -652,20 +654,21 @@ uv run python examples/auth_demo.py
 uv run python examples/file_upload_demo.py
 ```
 
-编译检查：
+运行测试与编译检查：
 
 ```bash
+uv run --no-sync pytest -q
 uv run python -m compileall src examples
 ```
 
 ## 路线图
 
-- 更完整的 multipart 文件上传能力
-- Retry / Backoff
-- OpenTelemetry
-- OpenAPI 生成器
-- SSE / Stream 响应转换
-- Record / Replay 测试工具
+- 已支持：超时与 Retry / Backoff、SSE / Stream 响应转换。
+- 主分支未发布：生命周期事件、响应内容重试；详见 [变更记录](CHANGELOG.md)。
+- 近期：完善请求生命周期、取消、上传重放和不同 Runtime 的行为约定。
+- 后续按实际使用需求推进：Record / Replay、OpenTelemetry 适配、OpenAPI 生成器。
+
+开发与贡献方式见 [CONTRIBUTING.md](CONTRIBUTING.md)，标签、预发布和正式发布流程见 [RELEASING.md](RELEASING.md)。
 
 ## 文档
 

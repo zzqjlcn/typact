@@ -1,10 +1,20 @@
 [project]
 name = "typact"
 version = "0.2.2"
-description = "Add your description here"
+description = "A typed, declarative Python HTTP client with pluggable runtimes, retries, and streaming."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.13"
+keywords = ["http", "client", "async", "typing", "declarative"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Framework :: AsyncIO",
+    "Typing :: Typed",
+]
 dependencies = [
     "pydantic>=2.13.4",
 ]
@@ -17,9 +27,23 @@ httpx = [
     "httpx>=0.28.1",
 ]
 
+[project.urls]
+Homepage = "https://typact.zzq.jl.cn"
+Documentation = "https://typact.zzq.jl.cn/docs/getting-started/"
+GitHub = "https://github.com/zzqjlcn/typact"
+AtomGit = "https://atomgit.com/zhangzhanqi/typact"
+Issues = "https://github.com/zzqjlcn/typact/issues"
+Changelog = "https://github.com/zzqjlcn/typact/blob/main/CHANGELOG.md"
+
+[dependency-groups]
+dev = ["pytest>=8.4,<10", "build>=1.2,<2", "packaging>=24,<27", "twine>=6,<7"]
+
 [build-system]
 requires = ["setuptools>=80"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+typact = ["py.typed"]

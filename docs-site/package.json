@@ -2,14 +2,17 @@
   "name": "typact-docs",
   "private": true,
   "type": "module",
+  "engines": { "node": "22.x" },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro check && astro build && node scripts/prepare-sites.mjs",
+    "check": "astro check",
+    "build": "astro check && astro build",
+    "build:sites": "npm run build && node scripts/prepare-sites.mjs",
     "preview": "astro preview"
   },
   "dependencies": {
-    "@astrojs/check": "latest",
-    "astro": "latest",
-    "typescript": "latest"
+    "@astrojs/check": "0.9.10",
+    "astro": "7.2.0",
+    "typescript": "6.0.3"
   }
 }
