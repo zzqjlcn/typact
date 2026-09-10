@@ -11,6 +11,7 @@ wheels/
 
 uv.lock
 .publish-dist/
+.package-venv/
 .release-audit/
 .env
 .env.*
