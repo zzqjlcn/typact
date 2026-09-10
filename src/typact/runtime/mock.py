@@ -1,0 +1,112 @@
+import json
+
+from typact.core.types import RequestConfig, Response
+from typact.runtime.base import ClientRuntime
+
+
+class MockRuntime(ClientRuntime):
+    def __init__(self):
+        self.routes: dict[tuple[str, str], Response] = {}
+        self.response_queues: dict[tuple[str, str], list[Response]] = {}
+        self.sse_routes: dict[tuple[str, str], list[bytes]] = {}
+        self.requests: list[RequestConfig] = []
+
+    def add_response(
+        self,
+        method: str,
+        url: str,
+        *,
+        status_code: int = 200,
+        json_data=None,
+        content: bytes | None = None,
+        headers: dict[str, str] | None = None,
+    ):
+        if content is None:
+            content = (
+                json.dumps(json_data).encode("utf-8")
+                if json_data is not None
+                else b""
+            )
+
+        self.routes[(method.upper(), url)] = Response(
+            status_code=status_code,
+            headers=headers or {},
+            content=content,
+            json_data=json_data,
+        )
+
+    def add_responses(
+        self,
+        method: str,
+        url: str,
+        responses: list[Response],
+    ):
+        self.response_queues[(method.upper(), url)] = responses
+
+    def add_sse_response(
+        self,
+        method: str,
+        url: str,
+        events: list[str | bytes],
+    ):
+        self.sse_routes[(method.upper(), url)] = [
+            event.encode("utf-8") if isinstance(event, str) else event
+            for event in events
+        ]
+
+    def add_stream_response(
+        self,
+        method: str,
+        url: str,
+        chunks: list[bytes],
+    ):
+        self.sse_routes[(method.upper(), url)] = chunks
+
+    async def request(self, config: RequestConfig) -> Response:
+        self.requests.append(self._snapshot_config(config))
+
+        key = (config.method.upper(), config.url)
+
+        if key in self.response_queues and self.response_queues[key]:
+            return self.response_queues[key].pop(0)
+
+        if key not in self.routes:
+            return Response(
+                status_code=404,
+                headers={},
+                content=b'{"detail":"mock response not found"}',
+                json_data={"detail": "mock response not found"},
+            )
+
+        return self.routes[key]
+
+    def stream(self, config: RequestConfig):
+        self.requests.append(self._snapshot_config(config))
+        events = self.sse_routes.get((config.method.upper(), config.url))
+
+        if events is None:
+            async def missing_stream():
+                raise RuntimeError("mock SSE response not found")
+                yield b""
+
+            return missing_stream()
+
+        async def iterator():
+            for event in events:
+                yield event
+
+        return iterator()
+
+    @staticmethod
+    def _snapshot_config(config: RequestConfig) -> RequestConfig:
+        return RequestConfig(
+            method=config.method,
+            url=config.url,
+            params=dict(config.params or {}),
+            headers=dict(config.headers or {}),
+            cookies=dict(config.cookies or {}),
+            json=config.json,
+            data=config.data,
+            files=dict(config.files) if isinstance(config.files, dict) else config.files,
+            timeout=config.timeout,
+        )
