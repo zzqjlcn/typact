@@ -17,6 +17,7 @@ jobs:
   test:
     name: Python ${{ matrix.python }} / ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -29,7 +30,7 @@ jobs:
           python-version: ${{ matrix.python }}
       - uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
       - run: uv sync --all-extras --group dev --python ${{ matrix.python }}
-      - run: uv run --no-sync pytest -q
+      - run: uv run --no-sync pytest -v
 
   package:
     runs-on: ubuntu-latest
