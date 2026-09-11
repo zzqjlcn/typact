@@ -59,6 +59,7 @@ class RuntimeIntegrationTest(unittest.IsolatedAsyncioTestCase):
 
     async def asyncTearDown(self):
         self.server.close()
+        self.server.close_clients()
         await self.server.wait_closed()
 
     async def _handle_connection(
@@ -66,11 +67,34 @@ class RuntimeIntegrationTest(unittest.IsolatedAsyncioTestCase):
         reader: asyncio.StreamReader,
         writer: asyncio.StreamWriter,
     ):
+        try:
+            await self._respond(reader, writer)
+        except ConnectionError:
+            # A client may intentionally close a stream before the response ends.
+            pass
+        finally:
+            writer.close()
+            try:
+                await writer.wait_closed()
+            except ConnectionError:
+                pass
+
+    async def _respond(
+        self,
+        reader: asyncio.StreamReader,
+        writer: asyncio.StreamWriter,
+    ):
         request_line = await reader.readline()
+        if not request_line:
+            return
         path = request_line.split()[1].decode()
 
-        while await reader.readline() != b"\r\n":
-            pass
+        while True:
+            line = await reader.readline()
+            if not line:
+                return
+            if line == b"\r\n":
+                break
 
         if path == "/health":
             writer.write(
@@ -92,8 +116,6 @@ class RuntimeIntegrationTest(unittest.IsolatedAsyncioTestCase):
             )
 
         await writer.drain()
-        writer.close()
-        await writer.wait_closed()
 
     @staticmethod
     async def _write_chunked(
