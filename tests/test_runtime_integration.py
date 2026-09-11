@@ -59,8 +59,9 @@ class RuntimeIntegrationTest(unittest.IsolatedAsyncioTestCase):
 
     async def asyncTearDown(self):
         self.server.close()
-        self.server.close_clients()
-        await self.server.wait_closed()
+        self.server.abort_clients()
+        async with asyncio.timeout(5):
+            await self.server.wait_closed()
 
     async def _handle_connection(
         self,
