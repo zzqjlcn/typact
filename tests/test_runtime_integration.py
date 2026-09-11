@@ -120,7 +120,9 @@ class RuntimeIntegrationTest(unittest.IsolatedAsyncioTestCase):
                 api = IntegrationApi(client)
 
                 self.assertEqual(await api.health(), {"ok": True})
-                self.assertEqual([chunk async for chunk in api.stream()], [b"first", b"-second"])
+                # Runtime buffering may split or combine HTTP chunks.
+                chunks = [chunk async for chunk in api.stream()]
+                self.assertEqual(b"".join(chunks), b"first-second")
                 self.assertEqual(
                     [event async for event in api.events()],
                     [{"value": 1}, {"value": 2}],
@@ -132,12 +134,16 @@ class RuntimeIntegrationTest(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(error.exception.status_code, 503)
                 self.assertEqual(error.exception.content, b"nope")
 
-    async def test_stream_can_be_closed_before_all_chunks_are_consumed(self):
+    async def test_stream_can_be_closed_before_iteration_finishes(self):
         from typact import HttpxRuntime
 
         async with HttpClient(self.base_url, client_runtime=HttpxRuntime()) as client:
             api = IntegrationApi(client)
             stream = api.stream()
 
-            self.assertEqual(await anext(stream), b"first")
+            first_chunk = await anext(stream)
+            self.assertTrue(first_chunk)
+            self.assertTrue(b"first-second".startswith(first_chunk))
             await stream.aclose()
+            with self.assertRaises(StopAsyncIteration):
+                await anext(stream)

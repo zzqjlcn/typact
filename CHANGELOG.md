@@ -20,6 +20,7 @@
 
 ### 工程调整
 
+- 流式集成测试按完整字节内容验证，避免依赖不同平台与 Runtime 的网络分块边界。
 - 标准文档构建与 Sites 专用打包分离；使用 Node 22 和固定前端依赖版本。
 - 修正文档 canonical 站点地址，增加 AtomGit/GitHub 托管入口。
 - 补录历史附注标签与 GitHub Releases，不代表发布了新的 PyPI 版本。
