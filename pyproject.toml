@@ -1,6 +1,6 @@
 [project]
 name = "typact"
-version = "0.2.2"
+version = "0.2.2a1"
 description = "A typed, declarative Python HTTP client with pluggable runtimes, retries, and streaming."
 readme = "README.md"
 license = "MIT"
