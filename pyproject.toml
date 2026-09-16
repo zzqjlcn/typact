@@ -1,15 +1,18 @@
 [project]
 name = "typact"
 version = "0.2.2a1"
-description = "A typed, declarative Python HTTP client with pluggable runtimes, retries, and streaming."
+description = "Build production-ready Python API clients with FastAPI-style declarations."
 readme = "README.md"
 license = "MIT"
-requires-python = ">=3.13"
-keywords = ["http", "client", "async", "typing", "declarative"]
+requires-python = ">=3.10"
+keywords = ["http", "api-client", "async", "typing", "declarative", "fastapi", "pydantic", "sse", "retry"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Framework :: AsyncIO",

@@ -1,24 +1,25 @@
 ---
 layout: ../../layouts/DocsLayout.astro
-title: 拦截器
-description: 用拦截器扩展认证、日志和链路追踪。
+title: Interceptors
+description: Add authentication, logging, and tracing without changing endpoint contracts.
 ---
 
-# 拦截器
+# Interceptors
 
-拦截器在不污染接口声明的前提下，为请求前后增加横切能力。
+Interceptors add behavior before or after a request without mixing infrastructure into endpoint declarations.
 
-## 典型用途
+## Common uses
 
-- 添加认证 Header
-- 记录请求与响应日志
-- 注入 Trace ID
-- 统一收集耗时与状态
+- Add authentication headers
+- Log requests and responses
+- Inject trace IDs
+- Collect latency and status metrics
 
-## 配置认证
+## Configure authentication
 
 ```python
 from typact import BearerTokenInterceptor, HttpClient, InterceptorChain
+
 
 client = HttpClient(
     "https://api.example.com",
@@ -28,8 +29,8 @@ client = HttpClient(
 )
 ```
 
-多个拦截器会按配置顺序组成链。接口函数仍然只描述业务输入与输出。
+Multiple interceptors run as a chain in configuration order. Endpoint functions continue to describe business inputs and outputs only.
 
-## 自定义拦截器
+## Custom interceptors
 
-继承基础拦截器并实现请求前或响应后的扩展点，即可封装项目级行为。把可复用的策略放在拦截器中，而不是重复写进每个接口函数。
+Implement the request or response extension point on the base interceptor to package application-specific behavior. Keep reusable policies in interceptors instead of repeating them in every endpoint function.

@@ -1,27 +1,27 @@
 ---
 layout: ../../layouts/DocsLayout.astro
-title: 核心概念
-description: 理解 Typact 如何把函数签名编译为 HTTP 请求。
+title: Core concepts
+description: Understand how Typact compiles a function signature into an HTTP request.
 ---
 
-# 核心概念
+# Core concepts
 
-Typact 把 Python 函数签名视为一份可执行的 HTTP 契约。
+Typact treats a Python function signature as an executable HTTP contract.
 
-## 一条清晰的流水线
+## One clear pipeline
 
-每次调用都会依次经过四个阶段：**读取声明 → 构建请求 → Runtime 传输 → 响应转换**。各阶段只负责一件事，因此可以独立替换和测试。
+Every call passes through four stages: **read the declaration → build the request → run the transport → convert the response**. Each stage has one responsibility, so it can be replaced and tested independently.
 
-| 阶段 | 职责 |
+| Stage | Responsibility |
 | --- | --- |
-| Client | 保存基础地址、路由元数据和共享配置 |
-| Builder | 将参数注解转换为 URL、Header 与请求体 |
-| Runtime | 真正发送请求，不参与业务建模 |
-| Converter | 根据返回类型转换响应数据 |
+| Client | Holds the base URL, route metadata, and shared configuration |
+| Builder | Converts parameter annotations into the URL, headers, and body |
+| Runtime | Sends the request without owning business models |
+| Converter | Converts response data according to the declared return type |
 
-`AsyncIterator[bytes]` 和 `AsyncIterator[str]` 会保留流式分片语义；其他 `AsyncIterator[T]` 则表示 SSE 事件流，并使用声明类型转换每条 `data:` 数据。
+`AsyncIterator[bytes]` and `AsyncIterator[str]` preserve raw stream semantics. Other `AsyncIterator[T]` declarations represent Server-Sent Events and convert each `data:` payload into `T`.
 
-## 函数签名就是契约
+## The function signature is the contract
 
 ```python
 @client.post("/teams/{team_id}/members")
@@ -33,8 +33,8 @@ async def add_member(
     pass
 ```
 
-路径、查询参数、请求体与响应模型集中在一个位置，编辑器和类型检查器可以完整理解这份契约。
+The path, query parameters, body, and response model live in one place that editors and type checkers can understand.
 
-## 可插拔，而非绑定
+## Pluggable instead of coupled
 
-Typact 的核心不依赖某个 HTTP 库。`UrllibRuntime` 负责零依赖默认体验，`HttpxRuntime` 与 `AioHttpRuntime` 提供不同生态选择，也可以实现自己的 Runtime。
+Typact's core does not depend on one HTTP library. `UrllibRuntime` provides a zero-extra-dependency default, while `HttpxRuntime` and `AioHttpRuntime` integrate with their respective ecosystems. Applications can also provide a custom Runtime.

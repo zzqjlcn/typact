@@ -8,6 +8,8 @@ wheels/
 
 # Virtual environments
 .venv
+.venv-stale/
+.uv-python/
 
 uv.lock
 .publish-dist/

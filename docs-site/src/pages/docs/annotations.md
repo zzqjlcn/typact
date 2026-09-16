@@ -1,17 +1,18 @@
 ---
 layout: ../../layouts/DocsLayout.astro
-title: 参数注解
-description: 使用 Path、Query、Header、Cookie、Body、Form 和 File 构建请求。
+title: Parameter annotations
+description: Build requests with Path, Query, Header, Cookie, Body, Form, and File.
 ---
 
-# 参数注解
+# Parameter annotations
 
-使用明确的参数注解描述每个值在 HTTP 请求中的位置。
+Use explicit annotations to describe where every value belongs in an HTTP request.
 
-## Path 与 Query
+## Path and Query
 
 ```python
 from typact import HttpClient, Path, Query
+
 
 @client.get("/users/{user_id}")
 async def get_user(
@@ -21,25 +22,26 @@ async def get_user(
     pass
 ```
 
-`alias` 可以让 Python 参数名与线上的字段名解耦：
+Use `alias` when the Python parameter name and wire name should differ:
 
 ```python
 page_size: int = Query(20, alias="pageSize")
 ```
 
-## Header 与 Cookie
+## Header and Cookie
 
 ```python
 request_id: str = Header(alias="X-Request-Id")
 session: str = Cookie(alias="session_id")
 ```
 
-## Body 与 Form
+## Body and Form
 
 ```python
 @client.post("/users")
 async def create_user(payload: UserInput = Body()) -> User:
     pass
+
 
 @client.post("/auth/login")
 async def login(name: str = Form(), password: str = Form()) -> Token:
@@ -48,12 +50,16 @@ async def login(name: str = Form(), password: str = Form()) -> Token:
 
 ## File
 
-文件参数会被构建成 Runtime 可以直接消费的 multipart 数据：
+File parameters become multipart data that the selected Runtime can send directly:
 
 ```python
 @client.post("/upload")
 async def upload(
-    content: bytes = File(alias="file", filename="report.txt", content_type="text/plain"),
+    content: bytes = File(
+        alias="file",
+        filename="report.txt",
+        content_type="text/plain",
+    ),
 ) -> dict:
     pass
 ```

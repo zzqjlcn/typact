@@ -16,20 +16,20 @@ try {
 }
 ---
 <!doctype html>
-<html lang="zh-CN" data-theme="dark">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"><meta name="description" content="Typact — 声明式、类型安全、可插拔 Runtime 的 Python HTTP Client"><link rel="icon" href="/favicon.svg"><title>Typact · Typed HTTP contracts for Python</title></head>
+<html lang="en" data-theme="dark">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"><meta name="description" content="Build production-ready Python API clients with FastAPI-style declarations."><link rel="icon" href="/favicon.svg"><title>Typact · Production-ready typed API clients</title></head>
 <body class="home">
-  <header class="topbar home-nav"><Brand /><nav class="top-actions"><a href="/docs/getting-started/">文档</a><SourceLink /><a href="https://pypi.org/project/typact/">PyPI ↗</a><a class="nav-cta" href="/docs/getting-started/">开始使用</a></nav></header>
+  <header class="topbar home-nav"><Brand /><nav class="top-actions"><a href="/docs/getting-started/">Docs</a><a href="https://github.com/zzqjlcn/typact/blob/main/README.zh-CN.md">中文</a><SourceLink /><a href="https://pypi.org/project/typact/">PyPI ↗</a><a class="nav-cta" href="/docs/getting-started/">Get started</a></nav></header>
   <main>
     <section class="hero">
       <div class="grid-glow"></div>
       <div class="hero-copy">
-        <div class="signal"><i></i> Python 3.13+ · v{packageVersion}</div>
-        <h1>让类型<br><span>成为契约。</span></h1>
-        <p>用熟悉的参数声明定义远程 API。Typact 接管请求构建、传输、转换与测试。</p>
-        <div class="hero-actions"><a class="primary" href="/docs/getting-started/">阅读文档 <span>→</span></a><button class="install" data-copy="pip install typact"><code>pip install typact</code><span>复制</span></button></div>
+        <div class="signal"><i></i> Python 3.10–3.14 · v{packageVersion}</div>
+        <h1>Ship clients.<br><span>Keep contracts.</span></h1>
+        <p>Build production-ready Python API clients with FastAPI-style declarations. Typact handles request building, validation, retries, streaming, and tests.</p>
+        <div class="hero-actions"><a class="primary" href="/docs/getting-started/">Read the docs <span>→</span></a><button class="install" data-copy="pip install typact"><code>pip install typact</code><span>Copy</span></button></div>
       </div>
-      <div class="contract" aria-label="从类型声明到响应模型的流程">
+      <div class="contract" aria-label="Flow from a typed declaration to a response model">
         <div class="contract-head"><span>contract.py</span><i></i><i></i><i></i></div>
         <pre><span class="purple">@client.get</span>(<span class="green">{'"/users/{user_id}"'}</span>)
 <span class="purple">async def</span> <span class="blue">get_user</span>(
@@ -42,20 +42,20 @@ try {
     </section>
     <section class="manifesto">
       <div class="section-label">01 / ONE CONTRACT</div>
-      <h2>写下接口的样子。<br>剩下的交给 Runtime。</h2>
-      <p>声明、传输与转换彼此解耦。你的业务函数只保留真正重要的部分：输入与输出。</p>
+      <h2>Declare the interface.<br>Typact runs the contract.</h2>
+      <p>Declarations, transports, and conversion stay independent. Your client code keeps the part that matters: typed inputs and outputs.</p>
     </section>
     <section class="features">
-      <div><span>01</span><h3>声明即实现</h3><p>Path、Query、Header、Body、Form 与 File，保持 FastAPI 风格的直觉。</p></div>
-      <div><span>02</span><h3>类型贯穿全程</h3><p>Pydantic TypeAdapter 将响应可靠地转换为模型、列表或任意声明类型。</p></div>
-      <div><span>03</span><h3>传输自由切换</h3><p>标准库开箱即用，也可无缝接入 httpx、aiohttp 或自己的 Runtime。</p></div>
+      <div><span>01</span><h3>FastAPI-style declarations</h3><p>Path, Query, Header, Body, Form, and File keep endpoint contracts familiar and readable.</p></div>
+      <div><span>02</span><h3>Production request policies</h3><p>Validated responses, timeouts, retries, token refresh, streams, and lifecycle events work together.</p></div>
+      <div><span>03</span><h3>Tests without a server</h3><p>Replace the transport with a Mock Runtime and inspect the exact request your declaration produced.</p></div>
     </section>
-    <section class="closing"><div class="section-label">READY WHEN YOU ARE</div><h2>更少胶水代码。<br>更清晰的边界。</h2><a href="/docs/getting-started/">五分钟开始使用 <span>↗</span></a></section>
+    <section class="closing"><div class="section-label">READY WHEN YOU ARE</div><h2>Less client plumbing.<br>Clearer service boundaries.</h2><a href="/docs/getting-started/">Start in five minutes <span>↗</span></a></section>
   </main>
   <footer><Brand /><span>Typed HTTP contracts for Python.</span><span>MIT · 2026</span></footer>
   <script>
     const button = document.querySelector<HTMLButtonElement>('[data-copy]');
-    button?.addEventListener('click', async () => { await navigator.clipboard.writeText(button.dataset.copy || ''); const label=button.querySelector('span'); if(label){label.textContent='已复制';setTimeout(()=>label.textContent='复制',1200)} });
+    button?.addEventListener('click', async () => { await navigator.clipboard.writeText(button.dataset.copy || ''); const label=button.querySelector('span'); if(label){label.textContent='Copied';setTimeout(()=>label.textContent='Copy',1200)} });
     const observer = new IntersectionObserver(entries => entries.forEach(e => e.isIntersecting && e.target.classList.add('visible')), {threshold:.18});
     document.querySelectorAll('.manifesto,.features>div,.closing').forEach(el => observer.observe(el));
   </script>
@@ -92,5 +92,5 @@ try {
   footer { display:flex; align-items:center; gap:2rem; padding:2rem 7vw; border-top:1px solid #202537; color:#6f778f; font-size:.72rem; }footer span:last-child{margin-left:auto}
   @keyframes arrive{from{opacity:0;transform:perspective(1000px) translateX(55px) rotateY(-10deg)}to{opacity:1}}
   @keyframes travel{from{transform:translateX(-40px)}to{transform:translateX(110px)}}
-  @media(max-width:850px){.hero{grid-template-columns:1fr;padding-top:120px}.contract{justify-self:start;transform:none}.features{grid-template-columns:1fr}.features>div{min-height:auto;border-right:0;border-bottom:1px solid #202537}.features h3{margin-top:4rem}.manifesto p{margin-left:0}.home-nav .top-actions a:not(.nav-cta){display:none}}
+  @media(max-width:850px){.hero{grid-template-columns:1fr;padding-top:120px}.contract{justify-self:start;transform:none}.features{grid-template-columns:1fr}.features>div{min-height:auto;border-right:0;border-bottom:1px solid #202537}.features h3{margin-top:4rem}.manifesto p{margin-left:0}.home-nav .nav-cta{display:inline-flex!important}:global(.home-nav .source-link){display:none}}
 </style>

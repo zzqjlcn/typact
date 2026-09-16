@@ -326,9 +326,11 @@ class HttpClient:
             return await self.runtime.request(config)
 
         try:
-            async with asyncio.timeout(config.timeout):
-                return await self.runtime.request(config)
-        except TimeoutError as exc:
+            return await asyncio.wait_for(
+                self.runtime.request(config),
+                timeout=config.timeout,
+            )
+        except asyncio.TimeoutError as exc:
             raise TypactTimeoutError(config.timeout) from exc
 
     async def _stream_with_retry(

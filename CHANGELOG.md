@@ -4,6 +4,11 @@
 
 ## [Unreleased]
 
+### 变更
+
+- 最低 Python 版本从 3.13 下调至 3.10，并在 Linux 与 Windows CI 中覆盖 Python 3.10 至 3.14。
+- 英文 README 和文档成为默认入口，原中文 README 保留为 `README.zh-CN.md`。
+
 ## [0.2.2a1] - 2026-09-14
 
 ### 新增

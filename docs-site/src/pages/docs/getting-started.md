@@ -1,54 +1,57 @@
 ---
 layout: ../../layouts/DocsLayout.astro
-title: 快速开始
-description: 安装 Typact，并在五分钟内完成第一个类型安全的 HTTP 请求。
+title: Getting started
+description: Install Typact and make your first typed HTTP request in five minutes.
 ---
 
-# 快速开始
+# Getting started
 
-安装 Typact，并在五分钟内完成第一个声明式、类型安全的 HTTP 请求。
+Install Typact and make your first declarative, type-safe HTTP request in five minutes.
 
-## 安装
+## Install
 
-核心包只依赖 Pydantic，默认 Runtime 使用 Python 标准库，无需额外安装 HTTP 客户端。
+The core package depends only on Pydantic. Its default Runtime uses Python's standard library, so a separate HTTP client is optional.
 
 ```bash
 pip install typact
 ```
 
-需要 `httpx` 或 `aiohttp` 时安装对应扩展：
+Install the corresponding extra to use httpx or aiohttp:
 
 ```bash
 pip install "typact[httpx]"
 pip install "typact[aiohttp]"
 ```
 
-> Typact 当前要求 Python 3.13 或更高版本。
+> Typact supports Python 3.10 through 3.14.
 
-## 定义第一个接口
+## Declare an endpoint
 
-创建响应模型和 Client，然后用装饰器声明远程 API：
+Create a response model and client, then describe the remote endpoint with a decorator:
 
 ```python
 from pydantic import BaseModel
 from typact import HttpClient, Path
 
+
 class User(BaseModel):
     id: int
     name: str
 
+
 client = HttpClient("https://api.example.com")
+
 
 @client.get("/users/{user_id}")
 async def get_user(user_id: int = Path()) -> User:
     pass
 ```
 
-函数体保持为空。Typact 会读取函数签名，构建请求并将响应转换为 `User`。
+The function body stays empty. Typact reads the signature, builds the request, and converts the response into `User`.
 
-## 发起请求
+## Make a request
 
-声明后的函数就是可直接调用的异步函数：
+The decorated function is now an async callable:
 
 ```python
 user = await get_user(1)
@@ -57,14 +60,15 @@ print(user.name)
 await client.close()
 ```
 
-下一步，了解 [参数注解](/docs/annotations/) 或 Typact 的 [核心概念](/docs/concepts/)。
+Continue with [parameter annotations](/docs/annotations/) or [core concepts](/docs/concepts/).
 
-## 生产调用配置
+## Add production policies
 
-需要设置超时或重试时，在创建 Client 时统一配置：
+Configure shared timeouts and retries when you create the client:
 
 ```python
 from typact import HttpClient, RetryConfig
+
 
 client = HttpClient(
     "https://api.example.com",
@@ -73,4 +77,4 @@ client = HttpClient(
 )
 ```
 
-默认不重试；默认策略只会重试幂等请求，避免重复提交写操作。
+Retries are disabled by default. When enabled, the default policy retries idempotent requests only, avoiding accidental duplicate writes.

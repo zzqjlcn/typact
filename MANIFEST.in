@@ -1,4 +1,4 @@
-include README.md LICENSE CHANGELOG.md CONTRIBUTING.md RELEASING.md
+include README.md README.zh-CN.md LICENSE CHANGELOG.md CONTRIBUTING.md RELEASING.md
 recursive-include src/typact *.py py.typed
 recursive-include tests *.py
 prune docs-site

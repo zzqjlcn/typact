@@ -4,14 +4,14 @@ Typact 是开源 HTTP 客户端库。设计变更应考虑通用场景、公共 
 
 ## 开发环境
 
-Python 3.13 或 3.14；使用 uv 管理环境：
+Python 3.10 至 3.14；使用 uv 管理环境：
 
 ```sh
 uv sync --all-extras --group dev
 uv run --no-sync pytest -q
 ```
 
-CI 在 Windows 和 Linux 上运行上述两个 Python 版本的完整测试，包含 urllib、httpx 和 aiohttp。Python 元数据允许更新版本，但未经 CI 验证的版本不在当前保证范围内。
+CI 在 Windows 和 Linux 上运行上述 Python 版本的完整测试，包含 urllib、httpx 和 aiohttp。Python 元数据允许更新版本，但未经 CI 验证的版本不在当前保证范围内。
 
 文档使用 Node.js 22，版本记录在 `docs-site/.node-version`：
 

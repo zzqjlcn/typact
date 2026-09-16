@@ -6,16 +6,16 @@ import '../styles/global.css';
 const { frontmatter } = Astro.props;
 const current = Astro.url.pathname;
 const groups = [
-  { title: '开始', links: [['快速开始', '/docs/getting-started/'], ['核心概念', '/docs/concepts/']] },
-  { title: '功能', links: [['参数注解', '/docs/annotations/'], ['Runtime', '/docs/runtime/'], ['拦截器', '/docs/interceptors/'], ['测试', '/docs/testing/']] },
+  { title: 'Start', links: [['Getting started', '/docs/getting-started/'], ['Core concepts', '/docs/concepts/']] },
+  { title: 'Guides', links: [['Annotations', '/docs/annotations/'], ['Runtimes', '/docs/runtime/'], ['Interceptors', '/docs/interceptors/'], ['Testing', '/docs/testing/']] },
 ];
 ---
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
-    <meta name="description" content={frontmatter.description ?? 'Typact 文档'} />
+    <meta name="description" content={frontmatter.description ?? 'Typact documentation'} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>{frontmatter.title} · Typact</title>
     <script is:inline>document.documentElement.dataset.theme = localStorage.getItem('typact-theme') || 'dark';</script>
@@ -23,17 +23,18 @@ const groups = [
   <body>
     <header class="topbar">
       <Brand />
-      <nav class="top-actions" aria-label="辅助导航">
-        <a href="/docs/getting-started/">文档</a>
+      <nav class="top-actions" aria-label="Secondary navigation">
+        <a href="/docs/getting-started/">Docs</a>
+        <a href="https://github.com/zzqjlcn/typact/blob/main/README.zh-CN.md">中文</a>
         <SourceLink />
         <a href="https://pypi.org/project/typact/" target="_blank" rel="noreferrer">PyPI ↗</a>
-        <button id="theme-toggle" aria-label="切换颜色主题">◐</button>
-        <button id="menu-toggle" class="menu-toggle" aria-label="打开菜单">菜单</button>
+        <button id="theme-toggle" aria-label="Toggle color theme">◐</button>
+        <button id="menu-toggle" class="menu-toggle" aria-label="Open menu">Menu</button>
       </nav>
     </header>
     <div class="docs-shell">
       <aside class="sidebar" id="sidebar">
-        <div class="version">文档 <span>v0.2.0</span></div>
+        <div class="version">Documentation <span>v0.2</span></div>
         {groups.map(group => <section>
           <h2>{group.title}</h2>
           {group.links.map(([label, href]) => <a class:list={{ active: current === href }} href={href}>{label}</a>)}
@@ -44,10 +45,10 @@ const groups = [
         <article class="prose"><slot /></article>
         <nav class="doc-footer">
           <span>Typact · MIT License</span>
-          <a href="/">返回首页 ↑</a>
+          <a href="/">Back to home ↑</a>
         </nav>
       </main>
-      <aside class="toc" aria-label="本页目录"><strong>本页内容</strong><nav id="toc-links"></nav></aside>
+      <aside class="toc" aria-label="On this page"><strong>On this page</strong><nav id="toc-links"></nav></aside>
     </div>
     <script>
       const root = document.documentElement;
@@ -61,8 +62,8 @@ const groups = [
         const a = document.createElement('a'); a.href = `#${heading.id}`; a.textContent = heading.textContent; toc?.append(a);
       });
       document.querySelectorAll('pre').forEach((pre) => {
-        const button = document.createElement('button'); button.className = 'copy'; button.textContent = '复制';
-        button.addEventListener('click', async () => { await navigator.clipboard.writeText(pre.textContent || ''); button.textContent = '已复制'; setTimeout(() => button.textContent = '复制', 1200); });
+        const button = document.createElement('button'); button.className = 'copy'; button.textContent = 'Copy';
+        button.addEventListener('click', async () => { await navigator.clipboard.writeText(pre.textContent || ''); button.textContent = 'Copied'; setTimeout(() => button.textContent = 'Copy', 1200); });
         pre.append(button);
       });
     </script>
