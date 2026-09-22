@@ -1,6 +1,6 @@
 [project]
 name = "typact"
-version = "0.2.2a1"
+version = "0.2.2a2"
 description = "Build production-ready Python API clients with FastAPI-style declarations."
 readme = "README.md"
 license = "MIT"
