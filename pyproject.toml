@@ -39,7 +39,14 @@ Issues = "https://github.com/zzqjlcn/typact/issues"
 Changelog = "https://github.com/zzqjlcn/typact/blob/main/CHANGELOG.md"
 
 [dependency-groups]
-dev = ["pytest>=8.4,<10", "pytest-timeout>=2.3,<3", "build>=1.2,<2", "packaging>=24,<27", "twine>=6,<7"]
+dev = [
+    "pytest>=8.4,<10",
+    "pytest-github-actions-annotate-failures>=0.4,<0.5",
+    "pytest-timeout>=2.3,<3",
+    "build>=1.2,<2",
+    "packaging>=24,<27",
+    "twine>=6,<7",
+]
 
 [tool.pytest.ini_options]
 timeout = 60
