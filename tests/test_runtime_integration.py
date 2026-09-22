@@ -62,6 +62,7 @@ class RuntimeIntegrationTest(unittest.IsolatedAsyncioTestCase):
         self.server.close()
         if hasattr(self.server, "abort_clients"):
             self.server.abort_clients()
+            await asyncio.wait_for(self.server.wait_closed(), timeout=5)
         else:
             writers = tuple(self.client_writers)
             for writer in writers:
@@ -70,7 +71,8 @@ class RuntimeIntegrationTest(unittest.IsolatedAsyncioTestCase):
                 *(writer.wait_closed() for writer in writers),
                 return_exceptions=True,
             )
-        await asyncio.wait_for(self.server.wait_closed(), timeout=5)
+            # Python 3.12 can leave wait_closed() blocked after every known
+            # client transport has closed (CPython issue #109564).
 
     async def _handle_connection(
         self,
