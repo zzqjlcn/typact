@@ -53,6 +53,7 @@ class RuntimeIntegrationTest(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual([event.phase for event in events], ["request", "retry", "response"])
 
     async def asyncSetUp(self):
+        self.client_writers: set[asyncio.StreamWriter] = set()
         self.server = await asyncio.start_server(self._handle_connection, "127.0.0.1", 0)
         port = self.server.sockets[0].getsockname()[1]
         self.base_url = f"http://127.0.0.1:{port}"
@@ -61,6 +62,14 @@ class RuntimeIntegrationTest(unittest.IsolatedAsyncioTestCase):
         self.server.close()
         if hasattr(self.server, "abort_clients"):
             self.server.abort_clients()
+        else:
+            writers = tuple(self.client_writers)
+            for writer in writers:
+                writer.close()
+            await asyncio.gather(
+                *(writer.wait_closed() for writer in writers),
+                return_exceptions=True,
+            )
         await asyncio.wait_for(self.server.wait_closed(), timeout=5)
 
     async def _handle_connection(
@@ -68,6 +77,7 @@ class RuntimeIntegrationTest(unittest.IsolatedAsyncioTestCase):
         reader: asyncio.StreamReader,
         writer: asyncio.StreamWriter,
     ):
+        self.client_writers.add(writer)
         try:
             await self._respond(reader, writer)
         except ConnectionError:
@@ -79,6 +89,7 @@ class RuntimeIntegrationTest(unittest.IsolatedAsyncioTestCase):
                 await writer.wait_closed()
             except ConnectionError:
                 pass
+            self.client_writers.discard(writer)
 
     async def _respond(
         self,
